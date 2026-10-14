@@ -1,8 +1,9 @@
 name: Build
 
+# Full builds run only for releases (v* tags) and manual runs; pull requests
+# run just the test job. Pushing to a branch or to main runs nothing.
 on:
   push:
-    branches: [main]
     tags: ["v*"]
   pull_request:
   # Actions > Build > Run workflow. With a version this publishes a release
@@ -42,6 +43,7 @@ jobs:
         run: npm ci && npx tsc --noEmit
 
   build:
+    if: github.event_name != 'pull_request'
     needs: test
     strategy:
       fail-fast: false
@@ -138,6 +140,7 @@ jobs:
     # is compiled inside an Ubuntu 18.04 container: a binary linked there
     # runs on every later release. (Node 22 cannot run on 18.04, so the
     # frontend is built on the host first and embedded by `go build`.)
+    if: github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-24.04
     steps:
