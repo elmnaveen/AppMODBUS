@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"appmodbus/internal/datafmt"
-	"appmodbus/internal/modbus"
-	"appmodbus/internal/simulator"
+	"modbusstudio/internal/datafmt"
+	"modbusstudio/internal/modbus"
+	"modbusstudio/internal/simulator"
 )
 
 func TestOnSampleOnlyWhenRecording(t *testing.T) {

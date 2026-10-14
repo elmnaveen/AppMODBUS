@@ -9,7 +9,7 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"appmodbus/internal/engine"
+	"modbusstudio/internal/engine"
 )
 
 // RunSequence starts a test sequence.

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"appmodbus/internal/datafmt"
+	"modbusstudio/internal/datafmt"
 )
 
 // Field is a profile column that can be mapped from a spreadsheet.

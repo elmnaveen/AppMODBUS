@@ -1,6 +1,6 @@
 // Package version holds build metadata injected at link time, e.g.
 //
-//	-ldflags "-X appmodbus/internal/version.Version=1.2.0"
+//	-ldflags "-X modbusstudio/internal/version.Version=1.2.0"
 package version
 
 // Version is the semantic version of this build (without a leading "v").

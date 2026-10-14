@@ -3,8 +3,8 @@ package engine
 import (
 	"testing"
 
-	"appmodbus/internal/modbus"
-	"appmodbus/internal/simulator"
+	"modbusstudio/internal/modbus"
+	"modbusstudio/internal/simulator"
 )
 
 func TestTagsScaleDisplayAndWrites(t *testing.T) {

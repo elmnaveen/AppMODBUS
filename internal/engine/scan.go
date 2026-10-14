@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"appmodbus/internal/modbus"
+	"modbusstudio/internal/modbus"
 )
 
 // EventScan carries ScanState updates.

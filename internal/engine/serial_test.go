@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"appmodbus/internal/modbus"
-	"appmodbus/internal/simulator"
+	"modbusstudio/internal/modbus"
+	"modbusstudio/internal/simulator"
 )
 
 // TestSerialRTU runs master and simulator over a virtual serial cable made

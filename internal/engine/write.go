@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"appmodbus/internal/datafmt"
-	"appmodbus/internal/modbus"
+	"modbusstudio/internal/datafmt"
+	"modbusstudio/internal/modbus"
 )
 
 // WriteRequest is a manual write from the Write dialogs.

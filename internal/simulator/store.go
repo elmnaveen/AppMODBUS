@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"appmodbus/internal/modbus"
+	"modbusstudio/internal/modbus"
 )
 
 // Table identifies one of the four Modbus data tables.

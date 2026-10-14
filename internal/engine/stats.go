@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"appmodbus/internal/modbus"
+	"modbusstudio/internal/modbus"
 )
 
 // recentSamples is how many response times are kept for percentiles,

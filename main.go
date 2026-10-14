@@ -10,14 +10,20 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 
-	"appmodbus/internal/version"
+	"modbusstudio/internal/legacy"
+	"modbusstudio/internal/recorder"
+	"modbusstudio/internal/settings"
+	"modbusstudio/internal/version"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
+	// Before anything opens the settings: carry data over from AppMODBUS.
+	migrated := legacy.Migrate(settings.LegacyDir(), settings.DefaultDir(), recorder.LegacyDefaultRoot(), recorder.DefaultRoot())
 	app := NewApp()
+	app.migrated = migrated
 	// macOS needs the standard app and Edit menus for Cmd+Q and
 	// copy/paste in text fields; the File menu lives in the toolbar.
 	var appMenu *menu.Menu

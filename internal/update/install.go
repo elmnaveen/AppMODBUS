@@ -18,12 +18,12 @@ import (
 var ErrNotWritable = errors.New("the application folder is not writable")
 
 const (
-	binaryName  = "AppMODBUS"
-	bundleName  = "AppMODBUS.app"
+	binaryName  = "ModbusStudio"
+	bundleName  = "ModbusStudio.app"
 	oldSuffix   = ".old"
 	newSuffix   = ".new"
-	macOldName  = ".AppMODBUS-old.app"
-	macStageDir = ".AppMODBUS-update"
+	macOldName  = ".ModbusStudio-old.app"
+	macStageDir = ".ModbusStudio-update"
 )
 
 // Launch describes how to start the updated application.
@@ -108,7 +108,7 @@ func installMacBundle(pkgPath, exe string) (Launch, error) {
 	defer os.RemoveAll(stage)
 	fresh := filepath.Join(stage, bundleName)
 	if _, err := os.Stat(filepath.Join(fresh, "Contents", "MacOS", binaryName)); err != nil {
-		return Launch{}, errors.New("update package does not contain AppMODBUS.app")
+		return Launch{}, errors.New("update package does not contain ModbusStudio.app")
 	}
 	old := filepath.Join(parent, macOldName)
 	os.RemoveAll(old)

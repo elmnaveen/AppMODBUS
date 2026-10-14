@@ -4,7 +4,7 @@ import { fmtNum } from '../charts/data'
 import { ALARM_LEVEL_LABELS, type Alarm, type AlarmEvent, type Poll } from '../types'
 import { IconBell, IconCheck, IconSave, IconX } from './Icons'
 
-const SOUND_KEY = 'appmodbus.alarmSound'
+const SOUND_KEY = 'modbus-studio.alarmSound'
 
 export function loadAlarmSound(): boolean {
   try {

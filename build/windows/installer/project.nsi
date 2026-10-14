@@ -32,11 +32,9 @@ Unicode true
 ####
 ## Include the wails tools
 ####
-# The product was renamed from AppMODBUS to Modbus Studio. Keep the original
-# install folder and uninstall entry so an upgrade replaces the old install in
-# place instead of adding a second copy.
-!define LEGACY_NAME "AppMODBUS"
-!define UNINST_KEY_NAME "${LEGACY_NAME}${LEGACY_NAME}"
+!define UNINST_KEY_NAME "ModbusStudio"
+# Modbus Studio replaces AppMODBUS (its name up to v2.0.0), which installed here.
+!define OLD_APP_DIR "$PROGRAMFILES64\AppMODBUS\AppMODBUS"
 
 !include "wails_tools.nsh"
 
@@ -78,11 +76,21 @@ ManifestDPIAware true
 
 Name "${INFO_PRODUCTNAME}"
 OutFile "..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the installer's file.
-InstallDir "$PROGRAMFILES64\${LEGACY_NAME}\${LEGACY_NAME}" # Folder of the original AppMODBUS installs (see LEGACY_NAME).
+InstallDir "$PROGRAMFILES64\${INFO_PRODUCTNAME}" # C:\Program Files\Modbus Studio
 ShowInstDetails show # This will always show the installation details.
 
 Function .onInit
    !insertmacro wails.checkArchitecture
+
+   # Offer to remove AppMODBUS. Its uninstaller keeps the user's settings and
+   # recordings, which Modbus Studio copies over on its first start.
+   IfFileExists "${OLD_APP_DIR}\uninstall.exe" 0 noOldApp
+      MessageBox MB_YESNO|MB_ICONQUESTION "AppMODBUS, the earlier name of this app, is installed.$\r$\n$\r$\nRemove it? Your settings and recordings are kept and carried over." /SD IDYES IDNO noOldApp
+      ExecWait '"${OLD_APP_DIR}\uninstall.exe" /S _?=${OLD_APP_DIR}' # _?= makes ExecWait wait for it
+      Delete "${OLD_APP_DIR}\uninstall.exe"
+      RMDir "${OLD_APP_DIR}"
+      RMDir "$PROGRAMFILES64\AppMODBUS"
+   noOldApp:
 FunctionEnd
 
 Section
@@ -94,8 +102,6 @@ Section
 
     !insertmacro wails.files
 
-    Delete "$SMPROGRAMS\${LEGACY_NAME}.lnk" # shortcuts from before the rename
-    Delete "$DESKTOP\${LEGACY_NAME}.lnk"
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
@@ -114,8 +120,6 @@ Section "uninstall"
 
     Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
     Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
-    Delete "$SMPROGRAMS\${LEGACY_NAME}.lnk"
-    Delete "$DESKTOP\${LEGACY_NAME}.lnk"
 
     !insertmacro wails.unassociateFiles
     !insertmacro wails.unassociateCustomProtocols

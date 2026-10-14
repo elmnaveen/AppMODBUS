@@ -56,8 +56,8 @@ const isMac = navigator.platform.toUpperCase().includes('MAC')
 export default function App() {
   const [theme, , setTheme] = useTheme()
   const [menuStyle, setMenuStyle] = useMenuStyle()
-  const [mpToolbar, setMpToolbar] = useState(() => { try { return localStorage.getItem('appmodbus.mpToolbar') !== 'off' } catch { return true } })
-  useEffect(() => { try { localStorage.setItem('appmodbus.mpToolbar', mpToolbar ? 'on' : 'off') } catch { /* ignore */ } }, [mpToolbar])
+  const [mpToolbar, setMpToolbar] = useState(() => { try { return localStorage.getItem('modbus-studio.mpToolbar') !== 'off' } catch { return true } })
+  useEffect(() => { try { localStorage.setItem('modbus-studio.mpToolbar', mpToolbar ? 'on' : 'off') } catch { /* ignore */ } }, [mpToolbar])
   const [polls, setPolls] = useState<Record<string, Poll>>({})
   const [order, setOrder] = useState<string[]>([])
   const [connections, setConnections] = useState<ConnectionInfo[]>([])
@@ -292,7 +292,7 @@ export default function App() {
       const conn = connections.find((c) => c.mode === 'tcp' && c.host === '127.0.0.1' && c.port === port)
         ?? await api.saveConnection({ ...blankConnection(), name: 'Local simulator', host: '127.0.0.1', port })
       // Label the demo windows with the bundled demo meter profile.
-      const created = await api.applyProfile('bundled:appmodbus-demo-meter.json', conn.id, 1, 500)
+      const created = await api.applyProfile('bundled:modbus-studio-demo-meter.json', conn.id, 1, 500)
       for (const p of created) {
         addPoll(p)
         await api.startPoll(p.config.id)

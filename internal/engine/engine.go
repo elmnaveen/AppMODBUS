@@ -14,9 +14,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"appmodbus/internal/datafmt"
-	"appmodbus/internal/modbus"
-	"appmodbus/internal/simulator"
+	"modbusstudio/internal/datafmt"
+	"modbusstudio/internal/modbus"
+	"modbusstudio/internal/simulator"
 )
 
 // Event names emitted to the UI.

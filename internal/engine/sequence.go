@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"appmodbus/internal/datafmt"
-	"appmodbus/internal/modbus"
+	"modbusstudio/internal/datafmt"
+	"modbusstudio/internal/modbus"
 )
 
 // EventSequence carries SequenceRun updates.

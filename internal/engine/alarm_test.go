@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"appmodbus/internal/modbus"
-	"appmodbus/internal/simulator"
+	"modbusstudio/internal/modbus"
+	"modbusstudio/internal/simulator"
 )
 
 func f(v float64) *float64 { return &v }

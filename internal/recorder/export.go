@@ -214,16 +214,22 @@ func writeXLSX(out io.Writer, t *table, loc *time.Location) error {
 // DefaultRoot returns the platform's usual place for large per-user data:
 // %LOCALAPPDATA% on Windows, ~/Library/Application Support on macOS and
 // $XDG_DATA_HOME (~/.local/share) elsewhere.
-func DefaultRoot() string {
+func DefaultRoot() string { return dataRoot("ModbusStudio") }
+
+// LegacyDefaultRoot is the default recordings folder used before the rename
+// to Modbus Studio (AppMODBUS up to v2.0.0).
+func LegacyDefaultRoot() string { return dataRoot("AppMODBUS") }
+
+func dataRoot(app string) string {
 	if d := os.Getenv("LOCALAPPDATA"); d != "" {
-		return filepath.Join(d, "AppMODBUS", "recordings")
+		return filepath.Join(d, app, "recordings")
 	}
 	home, _ := os.UserHomeDir()
 	if d := os.Getenv("XDG_DATA_HOME"); d != "" {
-		return filepath.Join(d, "AppMODBUS", "recordings")
+		return filepath.Join(d, app, "recordings")
 	}
 	if _, err := os.Stat(filepath.Join(home, "Library")); err == nil {
-		return filepath.Join(home, "Library", "Application Support", "AppMODBUS", "recordings")
+		return filepath.Join(home, "Library", "Application Support", app, "recordings")
 	}
-	return filepath.Join(home, ".local", "share", "AppMODBUS", "recordings")
+	return filepath.Join(home, ".local", "share", app, "recordings")
 }

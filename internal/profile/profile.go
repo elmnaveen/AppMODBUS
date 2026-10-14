@@ -10,15 +10,18 @@ import (
 	"sort"
 	"strings"
 
-	"appmodbus/internal/datafmt"
-	"appmodbus/internal/engine"
-	"appmodbus/internal/modbus"
+	"modbusstudio/internal/datafmt"
+	"modbusstudio/internal/engine"
+	"modbusstudio/internal/modbus"
 )
 
 // File identification.
 const (
-	FormatID       = "appmodbus-profile"
+	FormatID       = "modbus-studio-profile"
 	CurrentVersion = 1
+	// LegacyFormatID marks profiles made before the rename to Modbus Studio
+	// (AppMODBUS, up to v2.0.0), e.g. in a shared team folder; they load unchanged.
+	LegacyFormatID = "appmodbus-profile"
 )
 
 // Register is one entry of a register map.
@@ -144,7 +147,7 @@ func Decode(b []byte) (Profile, error) {
 	if err := json.Unmarshal(b, &p); err != nil {
 		return Profile{}, fmt.Errorf("not a profile file: %w", err)
 	}
-	if p.Format != FormatID {
+	if p.Format != FormatID && p.Format != LegacyFormatID {
 		return Profile{}, errors.New("not a Modbus Studio device profile")
 	}
 	if p.Version > CurrentVersion {

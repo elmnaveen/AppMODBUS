@@ -11,14 +11,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"appmodbus/internal/engine"
-	"appmodbus/internal/simulator"
+	"modbusstudio/internal/engine"
+	"modbusstudio/internal/simulator"
 )
 
 // File identification.
 const (
-	FormatID       = "appmodbus-workspace"
+	FormatID       = "modbus-studio-workspace"
 	CurrentVersion = 1
+	// LegacyFormatID marks workspaces saved before the rename to Modbus
+	// Studio (AppMODBUS, up to v2.0.0); they open unchanged.
+	LegacyFormatID = "appmodbus-workspace"
 	Extension      = ".mbw"
 )
 
@@ -70,7 +73,7 @@ func Decode(b []byte) (File, error) {
 	if err := json.Unmarshal(b, &head); err != nil {
 		return File{}, fmt.Errorf("not a workspace file: %w", err)
 	}
-	if head.Format != FormatID {
+	if head.Format != FormatID && head.Format != LegacyFormatID {
 		return File{}, errors.New("not a Modbus Studio workspace file")
 	}
 	if head.Version > CurrentVersion {

@@ -19,7 +19,7 @@ import (
 	"os"
 	"strings"
 
-	"appmodbus/internal/version"
+	"modbusstudio/internal/version"
 )
 
 func main() {

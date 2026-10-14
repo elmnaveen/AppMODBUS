@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"appmodbus/internal/modbus"
-	"appmodbus/internal/simulator"
+	"modbusstudio/internal/modbus"
+	"modbusstudio/internal/simulator"
 )
 
 func startSim(t *testing.T, e *Engine, mode modbus.Mode) int {

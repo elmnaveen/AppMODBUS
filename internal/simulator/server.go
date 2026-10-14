@@ -14,8 +14,8 @@ import (
 
 	"go.bug.st/serial"
 
-	"appmodbus/internal/datafmt"
-	"appmodbus/internal/modbus"
+	"modbusstudio/internal/datafmt"
+	"modbusstudio/internal/modbus"
 )
 
 // Config selects how the simulated slave listens.
