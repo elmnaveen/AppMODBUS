@@ -12,6 +12,14 @@ var Commit = ""
 // UpdateRepo is the GitHub "owner/repo" whose releases provide updates.
 var UpdateRepo = "elmnaveen/AppMODBUS"
 
-// UpdatePublicKey is the base64 Ed25519 key that release checksums must be
-// signed with. Builds without it can check for updates but not install them.
-var UpdatePublicKey = ""
+// PinnedUpdatePublicKey is the base64 Ed25519 public key of the release
+// signing key (the UPDATE_SIGNING_KEY Actions secret). It is public and
+// safe to commit. CI refuses to build or sign a release if the secret does
+// not match it, so a wrong or replaced secret can never ship a build that
+// rejects your own updates. Change it only when deliberately rotating the
+// key (see docs/UPDATES.md).
+const PinnedUpdatePublicKey = "d0b+dzEpjMR/f9fcuDxWZpfsJ01/YYvt2tR+H8K0OpI="
+
+// UpdatePublicKey is the key release checksums must be signed with.
+// Builds whose key is empty can check for updates but not install them.
+var UpdatePublicKey = PinnedUpdatePublicKey

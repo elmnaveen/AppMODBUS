@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -87,6 +88,7 @@ func (e *Engine) WriteCell(pollID string, address int, text string, forceMultipl
 	if cf, ok := cfg.CellFormats[address]; ok {
 		f = cf
 	}
+	tag, tagged := cfg.Tags[address]
 	p.mu.Unlock()
 
 	w := WriteRequest{ConnectionID: cfg.ConnectionID, SlaveID: cfg.SlaveID, Address: address}
@@ -102,7 +104,18 @@ func (e *Engine) WriteCell(pollID string, address int, text string, forceMultipl
 		}
 		w.Values = []int{b2i(on)}
 	case modbus.FuncReadHoldingRegisters:
-		regs, err := datafmt.ParseValue(f, text)
+		var regs []uint16
+		var err error
+		if tagged && tag.Scales() {
+			// The user types the engineering value; convert back to raw.
+			v, perr := strconv.ParseFloat(strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(text), tag.Unit)), 64)
+			if perr != nil {
+				return fmt.Errorf("%q is not a number", text)
+			}
+			regs, err = datafmt.FromNumeric(f, (v-tag.Offset)/tag.Gain)
+		} else {
+			regs, err = datafmt.ParseValue(f, text)
+		}
 		if err != nil {
 			return err
 		}
@@ -143,4 +156,28 @@ func (e *Engine) refresh(connID string) {
 		}
 		p.mu.Unlock()
 	}
+}
+
+// SetTag sets (or, with nil, removes) the tag of the register at address.
+func (e *Engine) SetTag(pollID string, address int, t *Tag) error {
+	p := e.poll(pollID)
+	if p == nil {
+		return errors.New("unknown poll")
+	}
+	if t != nil {
+		if err := normalizeTag(t); err != nil {
+			return err
+		}
+	}
+	p.mu.Lock()
+	if t == nil || *t == (Tag{Gain: 1, Decimals: -1}) { // empty tag
+		delete(p.cfg.Tags, address)
+	} else {
+		p.cfg.Tags[address] = *t
+	}
+	p.rebuildCells()
+	p.mu.Unlock()
+	e.publish(p)
+	e.changed()
+	return nil
 }

@@ -15,11 +15,29 @@ type Settings struct {
 	AutoCheckUpdates  bool   `json:"autoCheckUpdates"`
 	SkippedVersion    string `json:"skippedVersion"`
 	LastUpdateCheckAt int64  `json:"lastUpdateCheckAt"` // unix ms
+
+	RecentWorkspaces []string `json:"recentWorkspaces"` // most recent first
+
+	SharedProfileDir string `json:"sharedProfileDir"` // optional team profile folder
+}
+
+// MaxRecent is the length of the recent workspaces list.
+const MaxRecent = 10
+
+// AddRecent moves path to the front of the recent workspaces list.
+func (s *Settings) AddRecent(path string) {
+	list := []string{path}
+	for _, p := range s.RecentWorkspaces {
+		if p != path && len(list) < MaxRecent {
+			list = append(list, p)
+		}
+	}
+	s.RecentWorkspaces = list
 }
 
 // Defaults are used when no settings file exists.
 func Defaults() Settings {
-	return Settings{UpdateChannel: "stable", AutoCheckUpdates: true}
+	return Settings{UpdateChannel: "stable", AutoCheckUpdates: true, RecentWorkspaces: []string{}}
 }
 
 // Store loads and saves settings to one file.

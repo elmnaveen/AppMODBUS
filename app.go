@@ -18,6 +18,11 @@ type App struct {
 	ctx     context.Context
 	engine  *engine.Engine
 	updates *updater
+	ws      workspaceManager
+
+	// simConfig is the last simulator configuration, saved with the
+	// workspace even while the simulator is stopped.
+	simConfig simulator.Config
 }
 
 // NewApp creates the application.
@@ -26,10 +31,14 @@ func NewApp() *App { return &App{updates: newUpdater()} }
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.engine = engine.New(func(event string, data any) { runtime.EventsEmit(ctx, event, data) })
+	a.engine.OnChange = a.markDirty
 	a.startUpdater()
 }
 
-func (a *App) shutdown(context.Context) { a.engine.Shutdown() }
+func (a *App) shutdown(context.Context) {
+	_ = a.saveSession()
+	a.engine.Shutdown()
+}
 
 // ---- metadata ----
 
@@ -111,9 +120,28 @@ func (a *App) SaveTrafficLog(text string) (string, error) {
 
 // ---- simulator ----
 
-func (a *App) SimStart(c simulator.Config) error { return a.engine.Sim.Start(c) }
-func (a *App) SimStop()                          { a.engine.Sim.Stop() }
-func (a *App) SimStatus() simulator.Status       { return a.engine.Sim.Status() }
+func (a *App) SimStart(c simulator.Config) error {
+	if err := a.engine.Sim.Start(c); err != nil {
+		return err
+	}
+	a.simConfig = c
+	a.markDirty()
+	return nil
+}
+
+func (a *App) SimStop() {
+	a.engine.Sim.Stop()
+	a.markDirty()
+}
+
+// SimConfig returns the configuration to show in the simulator panel.
+func (a *App) SimConfig() simulator.Config {
+	if st := a.engine.Sim.Status(); st.Running {
+		return st.Config
+	}
+	return a.simConfig
+}
+func (a *App) SimStatus() simulator.Status { return a.engine.Sim.Status() }
 
 func (a *App) SimRead(table string, address, quantity int) []int {
 	return a.engine.Sim.Store.Read(simulator.Table(table), address, quantity)
@@ -121,4 +149,5 @@ func (a *App) SimRead(table string, address, quantity int) []int {
 
 func (a *App) SimWrite(table string, address int, values []int) {
 	a.engine.Sim.Store.Write(simulator.Table(table), address, values)
+	a.markDirty()
 }

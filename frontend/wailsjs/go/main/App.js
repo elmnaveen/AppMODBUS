@@ -6,8 +6,24 @@ export function AppInfo() {
   return window['go']['main']['App']['AppInfo']();
 }
 
+export function ApplyProfile(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ApplyProfile'](arg1, arg2, arg3, arg4);
+}
+
+export function BuildImport(arg1, arg2) {
+  return window['go']['main']['App']['BuildImport'](arg1, arg2);
+}
+
 export function CheckForUpdates() {
   return window['go']['main']['App']['CheckForUpdates']();
+}
+
+export function ChooseSharedProfileFolder() {
+  return window['go']['main']['App']['ChooseSharedProfileFolder']();
+}
+
+export function ClearSharedProfileFolder() {
+  return window['go']['main']['App']['ClearSharedProfileFolder']();
 }
 
 export function Connect(arg1) {
@@ -30,24 +46,60 @@ export function DeletePoll(arg1) {
   return window['go']['main']['App']['DeletePoll'](arg1);
 }
 
+export function DeleteProfile(arg1) {
+  return window['go']['main']['App']['DeleteProfile'](arg1);
+}
+
 export function Disconnect(arg1) {
   return window['go']['main']['App']['Disconnect'](arg1);
+}
+
+export function ExportProfile(arg1) {
+  return window['go']['main']['App']['ExportProfile'](arg1);
 }
 
 export function Formats() {
   return window['go']['main']['App']['Formats']();
 }
 
+export function GetProfile(arg1) {
+  return window['go']['main']['App']['GetProfile'](arg1);
+}
+
 export function GetUpdateState() {
   return window['go']['main']['App']['GetUpdateState']();
+}
+
+export function ImportProfileFile() {
+  return window['go']['main']['App']['ImportProfileFile']();
+}
+
+export function ImportTable() {
+  return window['go']['main']['App']['ImportTable']();
 }
 
 export function InstallUpdate() {
   return window['go']['main']['App']['InstallUpdate']();
 }
 
+export function ListProfiles() {
+  return window['go']['main']['App']['ListProfiles']();
+}
+
+export function NewWorkspace() {
+  return window['go']['main']['App']['NewWorkspace']();
+}
+
 export function OpenReleasePage() {
   return window['go']['main']['App']['OpenReleasePage']();
+}
+
+export function OpenWorkspace() {
+  return window['go']['main']['App']['OpenWorkspace']();
+}
+
+export function OpenWorkspacePath(arg1) {
+  return window['go']['main']['App']['OpenWorkspacePath'](arg1);
 }
 
 export function ParseValue(arg1, arg2) {
@@ -58,16 +110,48 @@ export function Polls() {
   return window['go']['main']['App']['Polls']();
 }
 
+export function PreviewTable(arg1) {
+  return window['go']['main']['App']['PreviewTable'](arg1);
+}
+
+export function ProfileFolders() {
+  return window['go']['main']['App']['ProfileFolders']();
+}
+
+export function ProfileFromPoll(arg1, arg2) {
+  return window['go']['main']['App']['ProfileFromPoll'](arg1, arg2);
+}
+
 export function ReadOnce(arg1) {
   return window['go']['main']['App']['ReadOnce'](arg1);
+}
+
+export function RemapSerialPort(arg1, arg2) {
+  return window['go']['main']['App']['RemapSerialPort'](arg1, arg2);
+}
+
+export function RestoreSession() {
+  return window['go']['main']['App']['RestoreSession']();
 }
 
 export function SaveConnection(arg1) {
   return window['go']['main']['App']['SaveConnection'](arg1);
 }
 
+export function SaveProfile(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveProfile'](arg1, arg2, arg3);
+}
+
 export function SaveTrafficLog(arg1) {
   return window['go']['main']['App']['SaveTrafficLog'](arg1);
+}
+
+export function SaveWorkspace() {
+  return window['go']['main']['App']['SaveWorkspace']();
+}
+
+export function SaveWorkspaceAs() {
+  return window['go']['main']['App']['SaveWorkspaceAs']();
 }
 
 export function SerialPorts() {
@@ -78,12 +162,28 @@ export function SetCellFormat(arg1, arg2, arg3) {
   return window['go']['main']['App']['SetCellFormat'](arg1, arg2, arg3);
 }
 
+export function SetCharts(arg1) {
+  return window['go']['main']['App']['SetCharts'](arg1);
+}
+
+export function SetLayout(arg1) {
+  return window['go']['main']['App']['SetLayout'](arg1);
+}
+
+export function SetTag(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetTag'](arg1, arg2, arg3);
+}
+
 export function SetTrafficPaused(arg1) {
   return window['go']['main']['App']['SetTrafficPaused'](arg1);
 }
 
 export function SetUpdateSettings(arg1, arg2) {
   return window['go']['main']['App']['SetUpdateSettings'](arg1, arg2);
+}
+
+export function SimConfig() {
+  return window['go']['main']['App']['SimConfig']();
 }
 
 export function SimRead(arg1, arg2, arg3) {
@@ -132,6 +232,10 @@ export function UpdatePoll(arg1) {
 
 export function UpdateSettings() {
   return window['go']['main']['App']['UpdateSettings']();
+}
+
+export function WorkspaceState() {
+  return window['go']['main']['App']['WorkspaceState']();
 }
 
 export function Write(arg1) {

@@ -29,3 +29,10 @@ export const IconRefresh = () => <I><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4
 export const IconInfo = () => <I><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></I>
 export const IconDownload = () => <I><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></I>
 export const IconExternal = () => <I><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></I>
+export const IconFile = () => <I><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8l-5-5zM14 3v5h5" /></I>
+export const IconFolder = () => <I><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6z" /></I>
+export const IconChevron = () => <I><path d="M6 9l6 6 6-6" /></I>
+export const IconTag = () => <I><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9zM7.5 7.5h.01" /></I>
+export const IconBook = () => <I><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5v-15zM4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3" /></I>
+export const IconUpload = () => <I><path d="M12 20V9M7 14l5-5 5 5M5 4h14" /></I>
+export const IconCopy = () => <I><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" /></I>

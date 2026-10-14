@@ -2,6 +2,8 @@
 import * as Go from '../wailsjs/go/main/App'
 import { EventsOn } from '../wailsjs/runtime/runtime'
 import type {
+  ImportOptions, ImportPreview, ImportResult, Profile, ProfileFolders, ProfileSummary, Tag,
+  Layout, LoadResult, WorkspaceState,
   AppInfo, UpdateProgress, UpdateSettings, UpdateState,
   ConnectionConfig, ConnectionInfo, FormatInfo, Poll, PollConfig, SimConfig,
   SimStatus, SimTable, TrafficEntry, WriteRequest,
@@ -47,6 +49,36 @@ export const api = {
   simRead: (t: SimTable, address: number, qty: number): Promise<number[]> => g.SimRead(t, address, qty),
   simWrite: (t: SimTable, address: number, values: number[]): Promise<void> => g.SimWrite(t, address, values),
 
+  simConfig: (): Promise<SimConfig> => g.SimConfig(),
+
+  restoreSession: (): Promise<LoadResult> => g.RestoreSession(),
+  workspaceState: (): Promise<WorkspaceState> => g.WorkspaceState(),
+  newWorkspace: (): Promise<LoadResult> => g.NewWorkspace(),
+  openWorkspace: (): Promise<LoadResult | null> => g.OpenWorkspace(),
+  openWorkspacePath: (path: string): Promise<LoadResult | null> => g.OpenWorkspacePath(path),
+  saveWorkspace: (): Promise<string> => g.SaveWorkspace(),
+  saveWorkspaceAs: (): Promise<string> => g.SaveWorkspaceAs(),
+  setLayout: (l: Layout): Promise<void> => g.SetLayout(l),
+  setCharts: (charts: unknown): Promise<void> => g.SetCharts(charts),
+  remapSerialPort: (connectionId: string, port: string): Promise<void> => g.RemapSerialPort(connectionId, port),
+
+  setTag: (pollId: string, address: number, tag: Tag | null): Promise<void> => g.SetTag(pollId, address, tag),
+  listProfiles: (): Promise<ProfileSummary[]> => g.ListProfiles(),
+  getProfile: (id: string): Promise<Profile> => g.GetProfile(id),
+  saveProfile: (p: Profile, dest: 'user' | 'shared', id: string): Promise<string> => g.SaveProfile(p, dest, id),
+  deleteProfile: (id: string): Promise<void> => g.DeleteProfile(id),
+  profileFolders: (): Promise<ProfileFolders> => g.ProfileFolders(),
+  chooseSharedProfileFolder: (): Promise<string> => g.ChooseSharedProfileFolder(),
+  clearSharedProfileFolder: (): Promise<void> => g.ClearSharedProfileFolder(),
+  applyProfile: (id: string, connectionId: string, slaveId: number, scanRateMs: number): Promise<Poll[]> =>
+    g.ApplyProfile(id, connectionId, slaveId, scanRateMs),
+  profileFromPoll: (pollId: string, name: string): Promise<Profile> => g.ProfileFromPoll(pollId, name),
+  importTable: (): Promise<ImportPreview | null> => g.ImportTable(),
+  previewTable: (path: string): Promise<ImportPreview> => g.PreviewTable(path),
+  buildImport: (path: string, o: ImportOptions): Promise<ImportResult> => g.BuildImport(path, o),
+  importProfileFile: (): Promise<string> => g.ImportProfileFile(),
+  exportProfile: (id: string): Promise<string> => g.ExportProfile(id),
+
   appInfo: (): Promise<AppInfo> => g.AppInfo(),
   updateSettings: (): Promise<UpdateSettings> => g.UpdateSettings(),
   setUpdateSettings: (channel: string, autoCheck: boolean): Promise<UpdateSettings> => g.SetUpdateSettings(channel, autoCheck),
@@ -61,6 +93,7 @@ export const events = {
   onPoll: (cb: (p: Poll) => void) => EventsOn('poll:update', cb),
   onConnections: (cb: (c: ConnectionInfo[]) => void) => EventsOn('connections', cb),
   onTraffic: (cb: (t: TrafficEntry[]) => void) => EventsOn('traffic', cb),
+  onWorkspace: (cb: (s: WorkspaceState) => void) => EventsOn('workspace:state', cb),
   onUpdateState: (cb: (s: UpdateState) => void) => EventsOn('update:state', cb),
   onUpdateProgress: (cb: (p: UpdateProgress) => void) => EventsOn('update:progress', cb),
 }
