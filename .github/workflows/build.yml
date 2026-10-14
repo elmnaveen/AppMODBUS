@@ -1,0 +1,139 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: "1.24"
+  NODE_VERSION: "22"
+  WAILS_VERSION: "v2.10.1"
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install socat (virtual serial ports for RTU tests)
+        run: sudo apt-get update && sudo apt-get install -y socat
+      - name: Go tests
+        run: go test -race ./internal/...
+      - name: Frontend typecheck
+        working-directory: frontend
+        run: npm ci && npx tsc --noEmit
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows/amd64
+            flags: -nsis
+          - os: macos-latest
+            platform: darwin/universal
+            flags: ""
+          - os: ubuntu-24.04
+            platform: linux/amd64
+            flags: -tags webkit2_41
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
+      - name: Build
+        shell: bash
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.0.0-dev.${GITHUB_RUN_NUMBER}"
+          fi
+          PUBKEY=""
+          if [ -n "$UPDATE_SIGNING_KEY" ]; then
+            PUBKEY="$(go run ./cmd/updatekey pubkey)"
+          fi
+          PKG=appmodbus/internal/version
+          LDFLAGS="-X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY -X $PKG.UpdatePublicKey=$PUBKEY"
+          echo "Building AppMODBUS $VERSION (signed updates: $([ -n "$PUBKEY" ] && echo yes || echo no))"
+          wails build -clean -platform ${{ matrix.platform }} ${{ matrix.flags }} -ldflags "$LDFLAGS"
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/bin/AppMODBUS.exe dist/AppMODBUS-windows-amd64.exe
+          Copy-Item build/bin/*installer.exe dist/AppMODBUS-windows-amd64-installer.exe
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist
+          ditto -c -k --keepParent build/bin/AppMODBUS.app dist/AppMODBUS-macos-universal.zip
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p dist
+          tar -C build/bin -czf dist/AppMODBUS-linux-amd64.tar.gz AppMODBUS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AppMODBUS-${{ runner.os }}
+          path: dist/*
+
+  release:
+    # Publishes a GitHub release with signed checksums. The in-app updater
+    # only installs packages listed in a checksums.txt whose Ed25519
+    # signature matches the public key compiled into the running build.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums and signature
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          if [ -z "$UPDATE_SIGNING_KEY" ]; then
+            echo "::error::UPDATE_SIGNING_KEY secret is not set; see docs/UPDATES.md"
+            exit 1
+          fi
+          (cd dist && sha256sum AppMODBUS-* > checksums.txt && cat checksums.txt)
+          go run ./cmd/updatekey sign dist/checksums.txt
+          go run ./cmd/updatekey verify dist/checksums.txt "$(go run ./cmd/updatekey pubkey)"
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
