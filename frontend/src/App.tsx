@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, errText, events } from './api'
 import { ConnectionsDialog, blankConnection } from './components/ConnectionsDialog'
 import {
-  IconBolt, IconBook, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
+  IconBolt, IconBook, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
 } from './components/Icons'
 import { PollDialog } from './components/PollDialog'
 import { PollWindow } from './components/PollWindow'
 import { SimulatorPanel, defaultSim } from './components/SimulatorPanel'
 import { TrafficPanel } from './components/TrafficPanel'
 import { AboutDialog, UpdateBanner, useUpdates } from './components/Updates'
+import { DataDialog } from './components/DataDialog'
 import { ProfilesDialog } from './components/Profiles'
 import { TagDialog } from './components/TagDialog'
 import { FileMenu, PortRemapDialog, UnsavedDialog } from './components/Workspace'
@@ -24,6 +25,7 @@ type Dialog =
   | { kind: 'about' }
   | { kind: 'tag'; pollId: string; cell: Cell }
   | { kind: 'profiles' }
+  | { kind: 'data' }
   | null
 
 export default function App() {
@@ -200,6 +202,7 @@ export default function App() {
         <button className="btn" disabled={running === 0} onClick={() => api.stopAll()}><IconStop />Stop all</button>
         <button className="btn" disabled={connections.length === 0} onClick={() => setDialog({ kind: 'write' })}><IconPen />Write</button>
         <button className="btn" onClick={() => setDialog({ kind: 'profiles' })}><IconBook />Profiles</button>
+        <button className="btn" onClick={() => setDialog({ kind: 'data' })}><IconDatabase />Data</button>
         <span className="tb-sep" />
         <button className={`btn icon${view === 'tabs' ? ' on' : ''}`} title="Tabbed view" onClick={() => setView('tabs')}><IconTabs /></button>
         <button className={`btn icon${view === 'tile' ? ' on' : ''}`} title="Tile all windows" onClick={() => setView('tile')}><IconTile /></button>
@@ -281,6 +284,9 @@ export default function App() {
           </span>
         ))}
         <span style={{ flex: 1 }} />
+        {order.some((id) => polls[id]?.config.record && polls[id]?.state.running) && (
+          <span className="item rec-status"><span className="rec-dot" />Recording {order.filter((id) => polls[id]?.config.record).length} window(s)</span>
+        )}
         <span className="item">{running}/{order.length} polling</span>
         {info && <span className="item mono" style={{ cursor: 'pointer' }} onClick={() => setDialog({ kind: 'about' })}>v{info.version}</span>}
         <span className="item"><span className={`dot${sim?.running ? ' ok' : ''}`} />Simulator {sim?.running ? `on :${sim.config.port || sim.config.serialPort}` : 'off'}</span>
@@ -322,6 +328,7 @@ export default function App() {
           onError={onError}
         />
       )}
+      {dialog?.kind === 'data' && <DataDialog onClose={() => setDialog(null)} onInfo={(m) => notify(m, false)} />}
       {dialog?.kind === 'about' && (
         <AboutDialog info={info} state={updates.state} progress={updates.progress} onClose={() => setDialog(null)} />
       )}

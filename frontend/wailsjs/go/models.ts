@@ -32,6 +32,8 @@ export namespace engine {
 	    name?: string;
 	    unit?: string;
 	    rawText?: string;
+	    num: number;
+	    hasNum: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Cell(source);
@@ -47,6 +49,8 @@ export namespace engine {
 	        this.name = source["name"];
 	        this.unit = source["unit"];
 	        this.rawText = source["rawText"];
+	        this.num = source["num"];
+	        this.hasNum = source["hasNum"];
 	    }
 	}
 	export class ConnectionConfig {
@@ -206,6 +210,7 @@ export namespace engine {
 	    plcAddressing: boolean;
 	    cellFormats: Record<number, string>;
 	    tags: Record<number, Tag>;
+	    record: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new PollConfig(source);
@@ -225,6 +230,7 @@ export namespace engine {
 	        this.plcAddressing = source["plcAddressing"];
 	        this.cellFormats = source["cellFormats"];
 	        this.tags = this.convertValues(source["tags"], Tag, true);
+	        this.record = source["record"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -325,6 +331,42 @@ export namespace main {
 	        this.arch = source["arch"];
 	        this.repo = source["repo"];
 	        this.canInstall = source["canInstall"];
+	    }
+	}
+	export class DataSettings {
+	    folder: string;
+	    defaultFolder: string;
+	    retentionDays: number;
+	    maxStorageMB: number;
+	    usedBytes: number;
+	    error: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DataSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.folder = source["folder"];
+	        this.defaultFolder = source["defaultFolder"];
+	        this.retentionDays = source["retentionDays"];
+	        this.maxStorageMB = source["maxStorageMB"];
+	        this.usedBytes = source["usedBytes"];
+	        this.error = source["error"];
+	    }
+	}
+	export class ExportResult {
+	    path: string;
+	    rows: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ExportResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.rows = source["rows"];
 	    }
 	}
 	export class ImportPreview {
@@ -653,6 +695,61 @@ export namespace profile {
 
 }
 
+export namespace recorder {
+	
+	export class Sample {
+	    t: number;
+	    v: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Sample(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.t = source["t"];
+	        this.v = source["v"];
+	    }
+	}
+	export class SeriesInfo {
+	    id: string;
+	    connection: string;
+	    slaveId: number;
+	    function: number;
+	    address: number;
+	    format: string;
+	    name: string;
+	    unit: string;
+	    window: string;
+	    bytes: number;
+	    samples: number;
+	    first: number;
+	    last: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SeriesInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.connection = source["connection"];
+	        this.slaveId = source["slaveId"];
+	        this.function = source["function"];
+	        this.address = source["address"];
+	        this.format = source["format"];
+	        this.name = source["name"];
+	        this.unit = source["unit"];
+	        this.window = source["window"];
+	        this.bytes = source["bytes"];
+	        this.samples = source["samples"];
+	        this.first = source["first"];
+	        this.last = source["last"];
+	    }
+	}
+
+}
+
 export namespace settings {
 	
 	export class Settings {
@@ -662,6 +759,9 @@ export namespace settings {
 	    lastUpdateCheckAt: number;
 	    recentWorkspaces: string[];
 	    sharedProfileDir: string;
+	    recordingsDir: string;
+	    retentionDays: number;
+	    maxStorageMB: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -675,6 +775,9 @@ export namespace settings {
 	        this.lastUpdateCheckAt = source["lastUpdateCheckAt"];
 	        this.recentWorkspaces = source["recentWorkspaces"];
 	        this.sharedProfileDir = source["sharedProfileDir"];
+	        this.recordingsDir = source["recordingsDir"];
+	        this.retentionDays = source["retentionDays"];
+	        this.maxStorageMB = source["maxStorageMB"];
 	    }
 	}
 

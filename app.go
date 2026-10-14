@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"os"
+	"sync/atomic"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"appmodbus/internal/datafmt"
 	"appmodbus/internal/engine"
 	"appmodbus/internal/modbus"
+	"appmodbus/internal/recorder"
 	"appmodbus/internal/simulator"
 )
 
@@ -23,6 +25,9 @@ type App struct {
 	// simConfig is the last simulator configuration, saved with the
 	// workspace even while the simulator is stopped.
 	simConfig simulator.Config
+
+	rec    *recorder.Recorder
+	recErr atomic.Value // string
 }
 
 // NewApp creates the application.
@@ -32,12 +37,16 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.engine = engine.New(func(event string, data any) { runtime.EventsEmit(ctx, event, data) })
 	a.engine.OnChange = a.markDirty
+	a.startRecorder()
 	a.startUpdater()
 }
 
 func (a *App) shutdown(context.Context) {
 	_ = a.saveSession()
 	a.engine.Shutdown()
+	if a.rec != nil {
+		a.rec.Close()
+	}
 }
 
 // ---- metadata ----

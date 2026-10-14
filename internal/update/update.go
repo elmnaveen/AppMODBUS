@@ -66,6 +66,43 @@ type Updater struct {
 	PublicKey string // base64 Ed25519 public key; empty disables installs
 	GOOS      string // defaults to runtime.GOOS (overridable for tests)
 	GOARCH    string
+	// Linux packaging of the running copy: LinuxPortable (tar.gz),
+	// LinuxDebLegacy (Ubuntu 18.04–22.04, WebKitGTK 4.0) or LinuxDeb
+	// (Ubuntu 24.04+, WebKitGTK 4.1).
+	Linux LinuxFlavor
+}
+
+// LinuxFlavor selects which Linux package an update is taken from.
+type LinuxFlavor int
+
+const (
+	LinuxPortable LinuxFlavor = iota
+	LinuxDebLegacy
+	LinuxDeb
+)
+
+// Linux .deb asset names.
+const (
+	DebLegacyAsset = "AppMODBUS-ubuntu-18.04-to-22.04-amd64.deb"
+	DebAsset       = "AppMODBUS-ubuntu-24.04-amd64.deb"
+)
+
+// DebInstallPath is where the .deb puts the executable.
+const DebInstallPath = "/opt/AppMODBUS/AppMODBUS"
+
+// DetectLinuxFlavor tells whether the running executable was installed
+// from the .deb (it lives in /opt/AppMODBUS and dpkg knows the package).
+func DetectLinuxFlavor(exe string, webkit41 bool) LinuxFlavor {
+	if exe != DebInstallPath {
+		return LinuxPortable
+	}
+	if _, err := os.Stat("/var/lib/dpkg/info/appmodbus.list"); err != nil {
+		return LinuxPortable
+	}
+	if webkit41 {
+		return LinuxDeb
+	}
+	return LinuxDebLegacy
 }
 
 func (u *Updater) client() *http.Client {
@@ -87,7 +124,7 @@ func (u *Updater) platform() (string, string) {
 }
 
 // PackageName returns the release asset holding the app for a platform.
-func PackageName(goos, arch string) (pkg, installer string, err error) {
+func PackageName(goos, arch string, linux LinuxFlavor) (pkg, installer string, err error) {
 	switch goos {
 	case "windows":
 		if arch == "amd64" {
@@ -97,6 +134,12 @@ func PackageName(goos, arch string) (pkg, installer string, err error) {
 		return "AppMODBUS-macos-universal.zip", "", nil
 	case "linux":
 		if arch == "amd64" {
+			switch linux {
+			case LinuxDeb:
+				return DebAsset, "", nil
+			case LinuxDebLegacy:
+				return DebLegacyAsset, "", nil
+			}
 			return "AppMODBUS-linux-amd64.tar.gz", "", nil
 		}
 	}
@@ -139,7 +182,8 @@ func (u *Updater) Check(ctx context.Context, ch Channel) (*Release, error) {
 	if err != nil {
 		return nil, fmt.Errorf("running version: %w", err)
 	}
-	pkgName, instName, err := PackageName(u.platform())
+	goos, arch := u.platform()
+	pkgName, instName, err := PackageName(goos, arch, u.Linux)
 	if err != nil {
 		return nil, err
 	}

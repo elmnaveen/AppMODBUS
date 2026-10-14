@@ -5,7 +5,7 @@ import { Modal } from './Modal'
 
 export const blankPoll = (connectionId: string): PollConfig => ({
   id: '', name: '', connectionId, slaveId: 1, function: 3, address: 0, quantity: 10,
-  scanRateMs: 1000, format: 'signed', plcAddressing: false, cellFormats: {}, tags: {},
+  scanRateMs: 1000, format: 'signed', plcAddressing: false, cellFormats: {}, tags: {}, record: false,
 })
 
 interface Props {

@@ -406,3 +406,27 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .tbl.sheet tr.skip td { color: var(--faint); }
 .warn-list { margin-top: 8px; font-size: 12px; color: var(--warn); max-height: 120px; overflow: auto; }
 input:disabled, select:disabled { background: var(--panel-2); color: var(--muted); cursor: default; }
+
+/* ---------- recording ---------- */
+.btn.rec { font-weight: 700; font-size: 11px; letter-spacing: .5px; color: var(--muted); }
+.rec-dot { width: 9px; height: 9px; border-radius: 50%; border: 2px solid currentColor; display: inline-block; }
+.btn.rec.on { color: #fff; background: var(--err); border-color: var(--err); }
+.btn.rec.on .rec-dot { background: #fff; border-color: #fff; animation: recpulse 1.4s ease-in-out infinite; }
+@keyframes recpulse { 50% { opacity: .35; } }
+.rec-status { color: var(--err); font-weight: 600; }
+.rec-status .rec-dot { background: var(--err); border-color: var(--err); animation: recpulse 1.4s ease-in-out infinite; }
+.data-top { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-bottom: 12px; }
+.data-top .path { display: inline-block; max-width: 330px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; font-size: 12px; }
+.usage { height: 8px; border-radius: 8px; background: var(--border); overflow: hidden; margin-bottom: 4px; }
+.usage > div { height: 100%; background: var(--accent); }
+.usage > div.hot { background: var(--err); }
+.data-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.data-bar input[type="datetime-local"] { width: auto; height: 28px; }
+.data-bar .seg button { padding: 4px 10px; }
+.data-list { border: 1px solid var(--border); border-radius: 8px; height: min(38vh, 380px); overflow: auto; }
+.data-list .tbl td { padding: 4px 6px; }
+.data-list tr.grp-row td { background: var(--panel-2); }
+.data-list tr.sel td { background: var(--accent-soft); }
+.data-list tbody tr:not(.grp-row) { cursor: pointer; }
+.data-actions { display: flex; gap: 6px; align-items: center; margin-top: 10px; }
+.btn.danger-fill { background: var(--err); border-color: var(--err); color: #fff; }

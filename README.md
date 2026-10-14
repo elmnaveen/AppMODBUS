@@ -22,6 +22,7 @@ with a **React + TypeScript** UI.
 | Simulator | Built-in Modbus slave (TCP, RTU over TCP/UDP, serial RTU) with an editable data table and optional live demo values |
 | Workspaces | Save/open `.mbw` files (connections, windows, formats, layout, simulator data); recent list; session autosave and restore on start-up with polling stopped; prompts to remap missing serial ports |
 | Tags & profiles | Name, gain/offset scaling and units per register; device profiles (bundled, personal and shared-folder) applied to any slave ID; import register maps from CSV/Excel with Modicon address detection |
+| Recording | **REC** per poll window stores values (in engineering units) on disk; Data management: retention (default 30 days), size cap (default 2 GB, oldest first), storage folder, export to CSV/Excel, delete by series or date range |
 | Themes | Light and dark |
 | Updates | Checks GitHub Releases on startup, offers one-click install & restart, Stable/Beta channels; every package is verified with an Ed25519-signed SHA-256 list ([docs/UPDATES.md](docs/UPDATES.md)) |
 
@@ -40,6 +41,25 @@ never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time
 2. Double-click a holding register or coil to write it. Right-click a register to change its format.
 3. To use real hardware, open **Connection**, pick a type (serial port or IP address), then add a window
    with **New poll**.
+
+## Installing
+
+Download from the [latest release](https://github.com/elmnaveen/AppMODBUS/releases/latest):
+
+| System | File |
+| --- | --- |
+| Windows 10/11 | `AppMODBUS-windows-amd64-installer.exe` (or the portable `AppMODBUS-windows-amd64.exe`) |
+| macOS | `AppMODBUS-macos-universal.zip` (Intel and Apple Silicon) |
+| Ubuntu 18.04, 20.04, 22.04 | `AppMODBUS-ubuntu-18.04-to-22.04-amd64.deb` |
+| Ubuntu 24.04 and newer | `AppMODBUS-ubuntu-24.04-amd64.deb` |
+| Other Linux (portable) | `AppMODBUS-linux-amd64.tar.gz` (needs WebKitGTK 4.1) |
+
+On Ubuntu, double-click the `.deb` or run `sudo apt install ./AppMODBUS-ubuntu-*.deb`. apt installs the
+WebKitGTK dependency, and AppMODBUS appears in the app menu. To use serial ports, add yourself to the
+`dialout` group once: `sudo usermod -aG dialout $USER`, then log out and in again.
+
+Installed copies update themselves (see [docs/UPDATES.md](docs/UPDATES.md)). A `.deb` installation is
+updated with the new `.deb` after a password prompt.
 
 ## Building from source
 
@@ -81,6 +101,7 @@ internal/simulator       Modbus slave: data store, request handler, TCP/UDP/seri
 internal/update          Release discovery, signature/checksum verification, self-install
 internal/workspace       Workspace (.mbw) file format and session autosave
 internal/profile         Device profiles, profile library, CSV/xlsx register-map import
+internal/recorder        On-disk time series of recorded values, retention, CSV/xlsx export
 internal/settings        Persisted user preferences
 internal/version         Build version, injected by CI
 cmd/updatekey            Generates the release signing key; signs and verifies checksums
@@ -89,5 +110,5 @@ frontend/src             React UI (poll windows, dialogs, traffic log, simulator
 
 ## Planned next (v2 ideas)
 
-Real-time charts with recording and data management, Modbus ASCII,
+Real-time and historical charts, Modbus ASCII,
 Modbus UDP (MBAP) and function 23 (read/write multiple registers).

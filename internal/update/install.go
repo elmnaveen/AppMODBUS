@@ -35,6 +35,12 @@ type Launch struct {
 // Install replaces the running application with the downloaded package.
 // exe is the path of the running executable.
 func Install(goos, pkgPath, exe string) (Launch, error) {
+	if goos == "linux" && strings.HasSuffix(pkgPath, ".deb") {
+		// A .deb install is owned by dpkg: install the new package with
+		// admin rights (pkexec shows the desktop password prompt), then
+		// start the updated app as the current user.
+		return Launch{Path: "sh", Args: []string{"-c", `pkexec dpkg -i "$0" && exec "$1"`, pkgPath, exe}}, nil
+	}
 	switch goos {
 	case "linux":
 		return installBinary(exe, func(dst string) error { return extractTarGz(pkgPath, binaryName, dst) })

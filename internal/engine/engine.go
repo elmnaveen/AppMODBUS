@@ -74,6 +74,7 @@ type PollConfig struct {
 	PLCAddressing bool                   `json:"plcAddressing"` // display 1-based
 	CellFormats   map[int]datafmt.Format `json:"cellFormats"`
 	Tags          map[int]Tag            `json:"tags"`
+	Record        bool                   `json:"record"` // store polled values on disk
 }
 
 // Tag names a register and converts its raw value to engineering units:
@@ -145,6 +146,12 @@ type Cell struct {
 	Name    string `json:"name,omitempty"`
 	Unit    string `json:"unit,omitempty"`
 	RawText string `json:"rawText,omitempty"` // unscaled value when a tag scales it
+
+	// Num is the value as a number in engineering units (after tag
+	// scaling), for recording and charts. HasNum is false for cells
+	// without data or with a non-finite value.
+	Num    float64 `json:"num"`
+	HasNum bool    `json:"hasNum"`
 }
 
 // PollState is the live state of a poll window.
@@ -199,6 +206,10 @@ type Engine struct {
 	// OnChange, if set, is called after any change to connections or poll
 	// definitions (used to track unsaved workspace changes).
 	OnChange func()
+
+	// OnSample, if set, receives every successful read of a poll window
+	// whose Record flag is on. cells must not be modified.
+	OnSample func(cfg PollConfig, connection string, cells []Cell, t time.Time)
 	loading  atomic.Bool
 }
 
@@ -725,7 +736,11 @@ func (e *Engine) pollOnce(p *poll) error {
 		p.regs, p.bits = regs, bits
 		p.rebuildCells()
 	}
+	cells := p.st.Cells
 	p.mu.Unlock()
+	if err == nil && cfg.Record && e.OnSample != nil {
+		e.OnSample(cfg, c.cfg.modbusConfig().Describe(), cells, start)
+	}
 	e.publish(p)
 	return err
 }
@@ -804,6 +819,7 @@ func (p *poll) rebuildCells() {
 			if i < len(p.bits) {
 				c.Raw = b2i(p.bits[i])
 				c.Value = strconv.Itoa(c.Raw)
+				c.Num, c.HasNum = float64(c.Raw), true
 			}
 			cells[i] = c
 		}
@@ -830,9 +846,13 @@ func (p *poll) rebuildCells() {
 			if span == datafmt.Registers(f) && i+span <= len(p.regs) {
 				regs := p.regs[i : i+span]
 				c.Value = datafmt.FormatValue(f, regs)
+				if n, ok := datafmt.Numeric(f, regs); ok {
+					c.Num, c.HasNum = n, true
+				}
 				if tagged && tag.Scales() {
 					if v, ok := tag.scaled(f, regs); ok {
 						c.RawText, c.Value = c.Value, v
+						c.Num = c.Num*tag.Gain + tag.Offset
 					}
 				}
 			} else {
@@ -857,4 +877,21 @@ func b2i(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// SetRecord turns recording of a poll window on or off.
+func (e *Engine) SetRecord(id string, on bool) error {
+	p := e.poll(id)
+	if p == nil {
+		return errors.New("unknown poll")
+	}
+	p.mu.Lock()
+	changed := p.cfg.Record != on
+	p.cfg.Record = on
+	p.mu.Unlock()
+	if changed {
+		e.publish(p)
+		e.changed()
+	}
+	return nil
 }

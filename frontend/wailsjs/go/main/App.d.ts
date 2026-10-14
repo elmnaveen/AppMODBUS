@@ -4,6 +4,7 @@ import {main} from '../models';
 import {engine} from '../models';
 import {profile} from '../models';
 import {datafmt} from '../models';
+import {recorder} from '../models';
 import {workspace} from '../models';
 import {settings} from '../models';
 import {simulator} from '../models';
@@ -15,6 +16,8 @@ export function ApplyProfile(arg1:string,arg2:string,arg3:number,arg4:number):Pr
 export function BuildImport(arg1:string,arg2:profile.ImportOptions):Promise<main.ImportResult>;
 
 export function CheckForUpdates():Promise<main.UpdateState>;
+
+export function ChooseRecordingsFolder():Promise<main.DataSettings>;
 
 export function ChooseSharedProfileFolder():Promise<string>;
 
@@ -32,11 +35,19 @@ export function DeletePoll(arg1:string):Promise<void>;
 
 export function DeleteProfile(arg1:string):Promise<void>;
 
+export function DeleteRecordedRange(arg1:Array<string>,arg2:number,arg3:number):Promise<void>;
+
+export function DeleteRecordedSeries(arg1:Array<string>):Promise<void>;
+
 export function Disconnect(arg1:string):Promise<void>;
 
 export function ExportProfile(arg1:string):Promise<string>;
 
+export function ExportRecording(arg1:Array<string>,arg2:number,arg3:number,arg4:string):Promise<main.ExportResult>;
+
 export function Formats():Promise<Array<datafmt.Info>>;
+
+export function GetDataSettings():Promise<main.DataSettings>;
 
 export function GetProfile(arg1:string):Promise<profile.Profile>;
 
@@ -68,9 +79,15 @@ export function ProfileFolders():Promise<main.ProfileFolders>;
 
 export function ProfileFromPoll(arg1:string,arg2:string):Promise<profile.Profile>;
 
+export function QuerySeries(arg1:string,arg2:number,arg3:number,arg4:number):Promise<Array<recorder.Sample>>;
+
 export function ReadOnce(arg1:string):Promise<void>;
 
+export function RecordedSeries():Promise<Array<recorder.SeriesInfo>>;
+
 export function RemapSerialPort(arg1:string,arg2:string):Promise<void>;
+
+export function ResetRecordingsFolder():Promise<main.DataSettings>;
 
 export function RestoreSession():Promise<main.LoadResult>;
 
@@ -90,7 +107,11 @@ export function SetCellFormat(arg1:string,arg2:number,arg3:string):Promise<void>
 
 export function SetCharts(arg1:any):Promise<void>;
 
+export function SetDataLimits(arg1:number,arg2:number):Promise<main.DataSettings>;
+
 export function SetLayout(arg1:workspace.Layout):Promise<void>;
+
+export function SetPollRecording(arg1:string,arg2:boolean):Promise<void>;
 
 export function SetTag(arg1:string,arg2:number,arg3:engine.Tag):Promise<void>;
 
