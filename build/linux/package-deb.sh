@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds an AppMODBUS .deb package.
+# Builds the Modbus Studio .deb package (package name and paths keep the original appmodbus id).
 #
 #   build/linux/package-deb.sh VERSION BINARY DEPENDS OUTPUT.deb
 #
@@ -33,10 +33,10 @@ Priority: optional
 Architecture: amd64
 Installed-Size: $SIZE
 Depends: libgtk-3-0, $WEBKIT
-Maintainer: AppMODBUS <appmodbus@users.noreply.github.com>
+Maintainer: Modbus Studio <appmodbus@users.noreply.github.com>
 Homepage: https://github.com/elmnaveen/AppMODBUS
 Description: Modbus master and slave simulator
- AppMODBUS polls Modbus devices over RTU (serial), Modbus TCP/IP and RTU
+ Modbus Studio polls Modbus devices over RTU (serial), Modbus TCP/IP and RTU
  over TCP/UDP, with register tags, device profiles, recording and a
  built-in slave simulator.
  .

@@ -1,4 +1,4 @@
-# AppMODBUS
+# Modbus Studio
 
 A cross-platform Modbus master (in the spirit of Modbus Poll) with a built-in slave simulator.
 It runs as a native desktop app on Windows, macOS and Linux and is written in **Go** using **Wails v2**,
@@ -58,7 +58,7 @@ never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time
 
 ## Quick start
 
-1. Launch AppMODBUS and click **Try with the built-in simulator**. This starts a slave on
+1. Launch Modbus Studio and click **Try with the built-in simulator**. This starts a slave on
    `127.0.0.1:5020`, connects to it and opens three poll windows.
 2. Double-click a holding register or coil to write it. Right-click a register to change its format,
    name it, or add it to a chart. **Chart** in a window's title bar shows its values over time.
@@ -78,7 +78,7 @@ Download from the [latest release](https://github.com/elmnaveen/AppMODBUS/releas
 | Other Linux (portable) | `AppMODBUS-linux-amd64.tar.gz` (needs WebKitGTK 4.1) |
 
 On Ubuntu, double-click the `.deb` or run `sudo apt install ./AppMODBUS-ubuntu-*.deb`. apt installs the
-WebKitGTK dependency, and AppMODBUS appears in the app menu. To use serial ports, add yourself to the
+WebKitGTK dependency, and Modbus Studio appears in the app menu. To use serial ports, add yourself to the
 `dialout` group once: `sudo usermod -aG dialout $USER`, then log out and in again.
 
 Installed copies update themselves (see [docs/UPDATES.md](docs/UPDATES.md)). A `.deb` installation is
@@ -108,8 +108,9 @@ wails build -nsis                  # Windows installer
 Run the tests with `go test -race ./internal/...`. The serial RTU test uses `socat` to create a
 virtual serial cable and is skipped if `socat` is not installed.
 
-CI (`.github/workflows/build.yml`) runs the tests and builds Windows (exe + NSIS installer),
-macOS (universal .app) and Linux binaries on every push. Running the workflow with a version (Actions → Build → Run workflow), or pushing a `v*` tag, publishes a GitHub release with
+CI (`.github/workflows/build.yml`) builds Windows (exe + NSIS installer), macOS (universal .app) and Linux binaries
+on every push to `main`, on `v*` tags and when started from Actions → Build → Run workflow. Pull requests run the tests
+only (Go tests and the frontend type check); pushes to other branches run nothing. With a version (or a tag) it also publishes a GitHub release with
 signed checksums, which installed copies pick up as an update. See [docs/UPDATES.md](docs/UPDATES.md) for the one-time
 signing-key setup.
 

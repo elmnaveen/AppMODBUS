@@ -1,4 +1,4 @@
-// Command updatekey manages the Ed25519 key that signs AppMODBUS releases.
+// Command updatekey manages the Ed25519 key that signs Modbus Studio releases.
 //
 //	go run ./cmd/updatekey generate          # print a new key pair
 //	go run ./cmd/updatekey pubkey            # public key of $UPDATE_SIGNING_KEY

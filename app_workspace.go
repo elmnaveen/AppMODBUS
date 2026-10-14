@@ -126,7 +126,7 @@ func (a *App) workspaceState() WorkspaceState {
 
 func (a *App) emitWorkspace() {
 	st := a.workspaceState()
-	title := st.Name + " — AppMODBUS " + version.Version
+	title := st.Name + " — Modbus Studio " + version.Version
 	if st.Dirty {
 		title = "● " + title
 	}
@@ -204,6 +204,7 @@ func (a *App) WorkspaceState() WorkspaceState { return a.workspaceState() }
 func (a *App) NewWorkspace() LoadResult {
 	r := a.apply(workspace.New(), "", false)
 	_ = a.saveSession()
+	a.log.Infof(srcWorkspace, "New workspace")
 	return r
 }
 
@@ -212,7 +213,7 @@ func (a *App) NewWorkspace() LoadResult {
 func (a *App) OpenWorkspace() (*LoadResult, error) {
 	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:   "Open workspace",
-		Filters: []runtime.FileFilter{{DisplayName: "AppMODBUS workspace (*.mbw)", Pattern: "*.mbw"}},
+		Filters: []runtime.FileFilter{{DisplayName: "Modbus Studio workspace (*.mbw)", Pattern: "*.mbw"}},
 	})
 	if err != nil || path == "" {
 		return nil, err
@@ -224,8 +225,10 @@ func (a *App) OpenWorkspace() (*LoadResult, error) {
 func (a *App) OpenWorkspacePath(path string) (*LoadResult, error) {
 	f, err := workspace.Read(path)
 	if err != nil {
+		a.log.Errorf(srcWorkspace, "Could not open %s: %v", path, err)
 		return nil, err
 	}
+	a.log.Infof(srcWorkspace, "Opened %s", path)
 	_, _ = a.prefs().Update(func(s *settings.Settings) { s.AddRecent(path) })
 	r := a.apply(f, path, false)
 	_ = a.saveSession()
@@ -255,7 +258,7 @@ func (a *App) SaveWorkspaceAs() (string, error) {
 		Title:            "Save workspace",
 		DefaultDirectory: dir,
 		DefaultFilename:  st.Name + workspace.Extension,
-		Filters:          []runtime.FileFilter{{DisplayName: "AppMODBUS workspace (*.mbw)", Pattern: "*.mbw"}},
+		Filters:          []runtime.FileFilter{{DisplayName: "Modbus Studio workspace (*.mbw)", Pattern: "*.mbw"}},
 	})
 	if err != nil || path == "" {
 		return "", err
@@ -269,8 +272,10 @@ func (a *App) saveTo(path string) error {
 		return errors.New("no file name")
 	}
 	if err := workspace.Write(path, a.snapshot()); err != nil {
+		a.log.Errorf(srcWorkspace, "Could not save %s: %v", path, err)
 		return err
 	}
+	a.log.Infof(srcWorkspace, "Saved %s", path)
 	a.ws.mu.Lock()
 	a.ws.path, a.ws.dirty = path, false
 	a.ws.mu.Unlock()

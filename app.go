@@ -8,6 +8,7 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
+	"appmodbus/internal/applog"
 	"appmodbus/internal/datafmt"
 	"appmodbus/internal/engine"
 	"appmodbus/internal/modbus"
@@ -31,6 +32,9 @@ type App struct {
 	recErr atomic.Value // string
 
 	alarmLog *engine.AlarmLog
+
+	log  *applog.Log
+	logw *logWatcher
 }
 
 // NewApp creates the application.
@@ -38,7 +42,11 @@ func NewApp() *App { return &App{updates: newUpdater()} }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	a.engine = engine.New(func(event string, data any) { runtime.EventsEmit(ctx, event, data) })
+	a.startLog()
+	a.engine = engine.New(func(event string, data any) {
+		a.observe(event, data)
+		runtime.EventsEmit(ctx, event, data)
+	})
 	a.engine.OnChange = a.markDirty
 	a.startRecorder()
 	a.startAlarmLog()
@@ -51,6 +59,8 @@ func (a *App) shutdown(context.Context) {
 	if a.rec != nil {
 		a.rec.Close()
 	}
+	a.log.Infof(srcApp, "Modbus Studio stopped")
+	a.log.Close()
 }
 
 // ---- metadata ----
@@ -72,25 +82,49 @@ func (a *App) SerialPorts() ([]string, error) {
 func (a *App) Connections() []engine.ConnectionInfo { return a.engine.Connections() }
 
 func (a *App) SaveConnection(c engine.ConnectionConfig) (engine.ConnectionInfo, error) {
-	return a.engine.SaveConnection(c)
+	info, err := a.engine.SaveConnection(c)
+	a.logResult(srcConnection, err, "Connection %q saved (%s)", c.Name, info.Summary)
+	return info, err
 }
 
-func (a *App) DeleteConnection(id string) { a.engine.DeleteConnection(id) }
-func (a *App) Connect(id string) error    { return a.engine.Connect(id) }
-func (a *App) Disconnect(id string)       { a.engine.Disconnect(id) }
+func (a *App) DeleteConnection(id string) {
+	name := id
+	for _, c := range a.engine.Connections() {
+		if c.ID == id {
+			name = c.Name
+		}
+	}
+	a.engine.DeleteConnection(id)
+	a.log.Infof(srcConnection, "Connection %q deleted", name)
+}
+func (a *App) Connect(id string) error { return a.engine.Connect(id) }
+func (a *App) Disconnect(id string)    { a.engine.Disconnect(id) }
 
 // ---- polls ----
 
 func (a *App) Polls() []engine.Poll { return a.engine.Polls() }
 
-func (a *App) CreatePoll(c engine.PollConfig) (engine.Poll, error) { return a.engine.CreatePoll(c) }
+func (a *App) CreatePoll(c engine.PollConfig) (engine.Poll, error) {
+	p, err := a.engine.CreatePoll(c)
+	a.logResult(srcPoll, err, "Poll window %q opened", c.Name)
+	return p, err
+}
 func (a *App) UpdatePoll(c engine.PollConfig) (engine.Poll, error) { return a.engine.UpdatePoll(c) }
-func (a *App) DeletePoll(id string)                                { a.engine.DeletePoll(id) }
-func (a *App) StartPoll(id string) error                           { return a.engine.StartPoll(id) }
-func (a *App) StopPoll(id string)                                  { a.engine.StopPoll(id) }
-func (a *App) StartAll() error                                     { return a.engine.StartAll() }
-func (a *App) StopAll()                                            { a.engine.StopAll() }
-func (a *App) ReadOnce(id string) error                            { return a.engine.ReadOnce(id) }
+func (a *App) DeletePoll(id string) {
+	name := id
+	for _, p := range a.engine.Polls() {
+		if p.Config.ID == id {
+			name = p.Config.Name
+		}
+	}
+	a.engine.DeletePoll(id)
+	a.log.Infof(srcPoll, "Poll window %q closed", name)
+}
+func (a *App) StartPoll(id string) error { return a.engine.StartPoll(id) }
+func (a *App) StopPoll(id string)        { a.engine.StopPoll(id) }
+func (a *App) StartAll() error           { return a.engine.StartAll() }
+func (a *App) StopAll()                  { a.engine.StopAll() }
+func (a *App) ReadOnce(id string) error  { return a.engine.ReadOnce(id) }
 
 func (a *App) SetCellFormat(id string, address int, format string) error {
 	return a.engine.SetCellFormat(id, address, datafmt.Format(format))
@@ -98,13 +132,23 @@ func (a *App) SetCellFormat(id string, address int, format string) error {
 
 // ---- writes ----
 
-func (a *App) Write(w engine.WriteRequest) error { return a.engine.Write(w) }
+func (a *App) Write(w engine.WriteRequest) error {
+	err := a.engine.Write(w)
+	a.logResult(srcWrite, err, "F%02d write to %s, slave %d, address %d: %s", w.Function, a.connName(w.ConnectionID), w.SlaveID, w.Address, valuesText(w.Values))
+	return err
+}
 
 // ReadWrite performs function 23 and returns the registers read.
-func (a *App) ReadWrite(r engine.ReadWriteRequest) ([]int, error) { return a.engine.ReadWrite(r) }
+func (a *App) ReadWrite(r engine.ReadWriteRequest) ([]int, error) {
+	out, err := a.engine.ReadWrite(r)
+	a.logResult(srcWrite, err, "F23 read/write on %s, slave %d: wrote %s at %d", a.connName(r.ConnectionID), r.SlaveID, valuesText(r.Values), r.WriteAddress)
+	return out, err
+}
 
 func (a *App) WriteCell(pollID string, address int, value string, forceMultiple bool) error {
-	return a.engine.WriteCell(pollID, address, value, forceMultiple)
+	err := a.engine.WriteCell(pollID, address, value, forceMultiple)
+	a.logResult(srcWrite, err, "%s: wrote %s to address %d", a.pollName(pollID), value, address)
+	return err
 }
 
 // ParseValue encodes a value in a format, for the multi-register write dialog.
@@ -159,8 +203,10 @@ func (a *App) SaveExportFile(title, defaultName, filterName, pattern, data strin
 
 func (a *App) SimStart(c simulator.Config) error {
 	if err := a.engine.Sim.Start(c); err != nil {
+		a.log.Errorf(srcSimulator, "Simulator failed to start: %v", err)
 		return err
 	}
+	a.log.Infof(srcSimulator, "Simulator started (%s)", simText(c))
 	a.simConfig = c
 	a.markDirty()
 	return nil
@@ -168,6 +214,7 @@ func (a *App) SimStart(c simulator.Config) error {
 
 func (a *App) SimStop() {
 	a.engine.Sim.Stop()
+	a.log.Infof(srcSimulator, "Simulator stopped")
 	a.markDirty()
 }
 

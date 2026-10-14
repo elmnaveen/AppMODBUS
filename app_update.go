@@ -99,6 +99,7 @@ func (a *App) setUpdateState(fn func(*UpdateState)) UpdateState {
 	fn(&a.updates.state)
 	st := a.updates.state
 	a.updates.mu.Unlock()
+	a.observeUpdate(st)
 	runtime.EventsEmit(a.ctx, eventUpdateState, st)
 	return st
 }
@@ -234,7 +235,7 @@ func (a *App) InstallUpdate() error {
 	}
 	if err != nil {
 		if errors.Is(err, update.ErrNotWritable) {
-			err = errors.New("AppMODBUS cannot replace itself in " + filepath.Dir(exe) + "; download the new version from the release page instead")
+			err = errors.New("Modbus Studio cannot replace itself in " + filepath.Dir(exe) + "; download the new version from the release page instead")
 		}
 		return fail(err)
 	}

@@ -32,6 +32,12 @@ Unicode true
 ####
 ## Include the wails tools
 ####
+# The product was renamed from AppMODBUS to Modbus Studio. Keep the original
+# install folder and uninstall entry so an upgrade replaces the old install in
+# place instead of adding a second copy.
+!define LEGACY_NAME "AppMODBUS"
+!define UNINST_KEY_NAME "${LEGACY_NAME}${LEGACY_NAME}"
+
 !include "wails_tools.nsh"
 
 # The version information for this two must consist of 4 parts
@@ -72,7 +78,7 @@ ManifestDPIAware true
 
 Name "${INFO_PRODUCTNAME}"
 OutFile "..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the installer's file.
-InstallDir "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}" # Default installing folder ($PROGRAMFILES is Program Files folder).
+InstallDir "$PROGRAMFILES64\${LEGACY_NAME}\${LEGACY_NAME}" # Folder of the original AppMODBUS installs (see LEGACY_NAME).
 ShowInstDetails show # This will always show the installation details.
 
 Function .onInit
@@ -88,6 +94,8 @@ Section
 
     !insertmacro wails.files
 
+    Delete "$SMPROGRAMS\${LEGACY_NAME}.lnk" # shortcuts from before the rename
+    Delete "$DESKTOP\${LEGACY_NAME}.lnk"
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
@@ -106,6 +114,8 @@ Section "uninstall"
 
     Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
     Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
+    Delete "$SMPROGRAMS\${LEGACY_NAME}.lnk"
+    Delete "$DESKTOP\${LEGACY_NAME}.lnk"
 
     !insertmacro wails.unassociateFiles
     !insertmacro wails.unassociateCustomProtocols

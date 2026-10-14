@@ -1,5 +1,7 @@
 name: Build
 
+# Full builds run on pushes to main, releases (v* tags) and manual runs;
+# pull requests run just the test job. Other branch pushes run nothing.
 on:
   push:
     branches: [main]
@@ -42,6 +44,7 @@ jobs:
         run: npm ci && npx tsc --noEmit
 
   build:
+    if: github.event_name != 'pull_request'
     needs: test
     strategy:
       fail-fast: false
@@ -104,7 +107,7 @@ jobs:
           node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('wails.json'));j.info.productVersion=process.argv[1];fs.writeFileSync('wails.json',JSON.stringify(j,null,2))" "${VERSION%%-*}"
           PKG=appmodbus/internal/version
           LDFLAGS="-X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY"
-          echo "Building AppMODBUS $VERSION"
+          echo "Building Modbus Studio $VERSION"
           wails build -clean -platform ${{ matrix.platform }} ${{ matrix.flags }} -ldflags "$LDFLAGS"
 
       - name: Package (Windows)
@@ -138,6 +141,7 @@ jobs:
     # is compiled inside an Ubuntu 18.04 container: a binary linked there
     # runs on every later release. (Node 22 cannot run on 18.04, so the
     # frontend is built on the host first and embedded by `go build`.)
+    if: github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-24.04
     steps:
@@ -242,7 +246,7 @@ jobs:
         with:
           tag_name: ${{ env.TAG }}
           target_commitish: ${{ github.sha }}
-          name: AppMODBUS ${{ env.TAG }}
+          name: Modbus Studio ${{ env.TAG }}
           files: dist/*
           prerelease: ${{ contains(env.TAG, '-') }}
           generate_release_notes: true

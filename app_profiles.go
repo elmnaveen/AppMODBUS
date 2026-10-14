@@ -176,7 +176,7 @@ func (a *App) BuildImport(path string, opt profile.ImportOptions) (ImportResult,
 func (a *App) ImportProfileFile() (string, error) {
 	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:   "Import device profile",
-		Filters: []runtime.FileFilter{{DisplayName: "AppMODBUS profile (*.json)", Pattern: "*.json"}},
+		Filters: []runtime.FileFilter{{DisplayName: "Modbus Studio profile (*.json)", Pattern: "*.json"}},
 	})
 	if err != nil || path == "" {
 		return "", err
@@ -201,7 +201,7 @@ func (a *App) ExportProfile(id string) (string, error) {
 	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
 		Title:           "Export device profile",
 		DefaultFilename: profile.FileName(p),
-		Filters:         []runtime.FileFilter{{DisplayName: "AppMODBUS profile (*.json)", Pattern: "*.json"}},
+		Filters:         []runtime.FileFilter{{DisplayName: "Modbus Studio profile (*.json)", Pattern: "*.json"}},
 	})
 	if err != nil || path == "" {
 		return "", err

@@ -93,7 +93,7 @@ func TestNetworkScanAndDeviceTools(t *testing.T) {
 	if len(st.Hosts) != 1 || !reflect.DeepEqual(st.Hosts[0].Units, []int{1}) || st.Hosts[0].Status != "modbus" {
 		t.Fatalf("hosts %+v", st.Hosts)
 	}
-	if !reflect.DeepEqual(st.Hosts[0].Identity, []string{"AppMODBUS", "SIM-1", "1.0"}) {
+	if !reflect.DeepEqual(st.Hosts[0].Identity, []string{"Modbus Studio", "SIM-1", "1.0"}) {
 		t.Fatalf("identity %+v", st.Hosts[0].Identity)
 	}
 
@@ -103,7 +103,7 @@ func TestNetworkScanAndDeviceTools(t *testing.T) {
 	conn, _ := e.SaveConnection(ConnectionConfig{Mode: modbus.ModeRTUOverTCP, Host: "127.0.0.1", Port: port, TimeoutMs: 500})
 	cl, timeout, _ := e.Client(conn.ID)
 	id, err := cl.ReadDeviceIdentification(1, modbus.DeviceIDRegular, timeout)
-	if err != nil || len(id.Objects) != 7 || id.Objects[4].Value != "AppMODBUS slave simulator" {
+	if err != nil || len(id.Objects) != 7 || id.Objects[4].Value != "Modbus Studio slave simulator" {
 		t.Fatalf("device id %+v, %v", id, err)
 	}
 	if v, err := cl.Diagnostic(1, modbus.DiagReturnQueryData, 0x1234, timeout); err != nil || v != 0x1234 {

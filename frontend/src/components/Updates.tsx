@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { api, errText, events } from '../api'
 import type { AppInfo, Release, UpdateProgress, UpdateSettings, UpdateState } from '../types'
 import { IconDownload, IconExternal, IconRefresh, IconX } from './Icons'
+import { Logo } from './Logo'
 import { Modal } from './Modal'
 
 /** Live updater state shared by the banner, toolbar badge and dialog. */
@@ -58,7 +59,7 @@ export function UpdateBanner({ state, progress, canInstall, onDetails, onError }
     <div className="upd-banner">
       <IconDownload />
       <span>
-        <b>AppMODBUS {rel.version}</b> {rel.prerelease && <span className="pill beta">Beta</span>} is available
+        <b>Modbus Studio {rel.version}</b> {rel.prerelease && <span className="pill beta">Beta</span>} is available
       </span>
       {busy(state) ? (
         <ProgressBar state={state} progress={progress} />
@@ -153,7 +154,7 @@ export function AboutDialog({ info, state, progress, onClose }: DialogProps) {
 
   return (
     <Modal
-      title="About AppMODBUS"
+      title="About Modbus Studio"
       onClose={onClose}
       width={600}
       footer={
@@ -171,9 +172,9 @@ export function AboutDialog({ info, state, progress, onClose }: DialogProps) {
       }
     >
       <div className="about-head">
-        <span className="brand-mark" style={{ width: 44, height: 44, fontSize: 16, borderRadius: 10 }}>MB</span>
+        <Logo size={48} />
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>AppMODBUS</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>Modbus Studio</div>
           <div className="muted mono" style={{ fontSize: 12 }}>
             v{info?.version} {info?.commit && `(${info.commit.slice(0, 7)})`} · {info?.os}/{info?.arch}
           </div>
@@ -196,7 +197,7 @@ export function AboutDialog({ info, state, progress, onClose }: DialogProps) {
         <label className="lbl">Automatic check</label>
         <label className="check">
           <input type="checkbox" checked={settings?.autoCheckUpdates ?? true} onChange={(e) => settings && save(settings.updateChannel, e.target.checked)} />
-          Check for updates when AppMODBUS starts
+          Check for updates when Modbus Studio starts
         </label>
         <label className="lbl">Status</label>
         <div>{status}</div>

@@ -68,7 +68,7 @@ func Open(dir string) *Store {
 	return st
 }
 
-// DefaultDir returns the per-user config directory for AppMODBUS.
+// DefaultDir returns the per-user config directory for Modbus Studio.
 func DefaultDir() string {
 	if d, err := os.UserConfigDir(); err == nil {
 		return filepath.Join(d, "AppMODBUS")

@@ -13,7 +13,7 @@ export function loadAlarmSound(): boolean {
     return true
   }
 }
-function saveAlarmSound(on: boolean) {
+export function saveAlarmSound(on: boolean) {
   try {
     localStorage.setItem(SOUND_KEY, on ? 'on' : 'off')
   } catch {

@@ -107,13 +107,15 @@ interface ManualProps {
   connections: ConnectionInfo[]
   formats: FormatInfo[]
   defaults?: { connectionId: string; slaveId: number }
+  /** Function code to start with (5, 6, 15, 16 or 23). */
+  initialFunction?: number
   onClose: () => void
 }
 
-export function ManualWriteDialog({ connections, formats, defaults, onClose }: ManualProps) {
+export function ManualWriteDialog({ connections, formats, defaults, initialFunction, onClose }: ManualProps) {
   const [connId, setConnId] = useState(defaults?.connectionId ?? connections[0]?.id ?? '')
   const [slave, setSlave] = useState(defaults?.slaveId ?? 1)
-  const [fn, setFn] = useState(6)
+  const [fn, setFn] = useState(initialFunction ?? 6)
   const [address, setAddress] = useState(0)
   const [format, setFormat] = useState('signed')
   const [text, setText] = useState('')

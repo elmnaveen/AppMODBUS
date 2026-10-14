@@ -1,5 +1,5 @@
 // Package modbus implements the Modbus application protocol (PDU encoding)
-// and the RTU / TCP (MBAP) framings used by AppMODBUS.
+// and the RTU / TCP (MBAP) framings used by Modbus Studio.
 package modbus
 
 import (
@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-// Function codes supported by AppMODBUS.
+// Function codes supported by Modbus Studio.
 const (
 	FuncReadCoils              byte = 0x01
 	FuncReadDiscreteInputs     byte = 0x02

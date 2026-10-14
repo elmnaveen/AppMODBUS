@@ -275,11 +275,11 @@ func (s *Server) diagnostics(req modbus.PDU) modbus.PDU {
 
 // simIdentity is what the simulator reports for FC43/14.
 var simIdentity = []modbus.DeviceObject{
-	{ID: 0x00, Value: "AppMODBUS"},
+	{ID: 0x00, Value: "Modbus Studio"},
 	{ID: 0x01, Value: "SIM-1"},
 	{ID: 0x02, Value: "1.0"},
 	{ID: 0x03, Value: "https://github.com/elmnaveen/AppMODBUS"},
-	{ID: 0x04, Value: "AppMODBUS slave simulator"},
+	{ID: 0x04, Value: "Modbus Studio slave simulator"},
 	{ID: 0x05, Value: "Simulator"},
 	{ID: 0x06, Value: "Demo meter"},
 }

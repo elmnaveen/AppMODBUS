@@ -22,6 +22,14 @@ export function AppInfo() {
   return window['go']['main']['App']['AppInfo']();
 }
 
+export function AppLog(arg1) {
+  return window['go']['main']['App']['AppLog'](arg1);
+}
+
+export function AppLogFolder() {
+  return window['go']['main']['App']['AppLogFolder']();
+}
+
 export function ApplyProfile(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ApplyProfile'](arg1, arg2, arg3, arg4);
 }
@@ -40,6 +48,10 @@ export function ChooseRecordingsFolder() {
 
 export function ChooseSharedProfileFolder() {
   return window['go']['main']['App']['ChooseSharedProfileFolder']();
+}
+
+export function ClearAppLog() {
+  return window['go']['main']['App']['ClearAppLog']();
 }
 
 export function ClearDiagCounters(arg1, arg2) {
@@ -98,6 +110,10 @@ export function ExportAlarmHistory(arg1, arg2) {
   return window['go']['main']['App']['ExportAlarmHistory'](arg1, arg2);
 }
 
+export function ExportAppLog() {
+  return window['go']['main']['App']['ExportAppLog']();
+}
+
 export function ExportProfile(arg1) {
   return window['go']['main']['App']['ExportProfile'](arg1);
 }
@@ -142,8 +158,16 @@ export function ListProfiles() {
   return window['go']['main']['App']['ListProfiles']();
 }
 
+export function LogUI(arg1, arg2) {
+  return window['go']['main']['App']['LogUI'](arg1, arg2);
+}
+
 export function NewWorkspace() {
   return window['go']['main']['App']['NewWorkspace']();
+}
+
+export function OpenAppLogFolder() {
+  return window['go']['main']['App']['OpenAppLogFolder']();
 }
 
 export function OpenReleasePage() {

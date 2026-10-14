@@ -1,5 +1,5 @@
 // Package datafmt converts between raw Modbus registers and the display
-// formats offered by AppMODBUS (16/32/64-bit integers and IEEE floats in
+// formats offered by Modbus Studio (16/32/64-bit integers and IEEE floats in
 // every common byte order).
 package datafmt
 

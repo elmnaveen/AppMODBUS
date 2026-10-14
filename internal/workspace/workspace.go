@@ -1,4 +1,4 @@
-// Package workspace defines the AppMODBUS workspace file (.mbw): a JSON
+// Package workspace defines the Modbus Studio workspace file (.mbw): a JSON
 // document holding connections, poll windows, layout, charts and the
 // simulator setup, so a test session can be saved and reopened.
 package workspace
@@ -41,7 +41,7 @@ type Simulator struct {
 type File struct {
 	Format      string                    `json:"format"`
 	Version     int                       `json:"version"`
-	App         string                    `json:"app,omitempty"` // AppMODBUS version that saved it
+	App         string                    `json:"app,omitempty"` // Modbus Studio version that saved it
 	Connections []engine.ConnectionConfig `json:"connections"`
 	Polls       []engine.PollConfig       `json:"polls"`
 	Layout      Layout                    `json:"layout"`
@@ -71,10 +71,10 @@ func Decode(b []byte) (File, error) {
 		return File{}, fmt.Errorf("not a workspace file: %w", err)
 	}
 	if head.Format != FormatID {
-		return File{}, errors.New("not an AppMODBUS workspace file")
+		return File{}, errors.New("not a Modbus Studio workspace file")
 	}
 	if head.Version > CurrentVersion {
-		return File{}, fmt.Errorf("this workspace was saved by a newer AppMODBUS (format %d); please update the app", head.Version)
+		return File{}, fmt.Errorf("this workspace was saved by a newer Modbus Studio (format %d); please update the app", head.Version)
 	}
 	f := New()
 	if err := json.Unmarshal(b, &f); err != nil {
