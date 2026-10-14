@@ -29,7 +29,7 @@ jobs:
       - name: Install socat (virtual serial ports for RTU tests)
         run: sudo apt-get update && sudo apt-get install -y socat
       - name: Go tests
-        run: go test -race ./internal/...
+        run: go test -race ./internal/... ./cmd/...
       - name: Frontend typecheck
         working-directory: frontend
         run: npm ci && npx tsc --noEmit
@@ -73,13 +73,14 @@ jobs:
           else
             VERSION="0.0.0-dev.${GITHUB_RUN_NUMBER}"
           fi
-          PUBKEY=""
+          # The public key is pinned in internal/version; make sure the
+          # signing secret (if available) is the matching one.
           if [ -n "$UPDATE_SIGNING_KEY" ]; then
-            PUBKEY="$(go run ./cmd/updatekey pubkey)"
+            go run ./cmd/updatekey check
           fi
           PKG=appmodbus/internal/version
-          LDFLAGS="-X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY -X $PKG.UpdatePublicKey=$PUBKEY"
-          echo "Building AppMODBUS $VERSION (signed updates: $([ -n "$PUBKEY" ] && echo yes || echo no))"
+          LDFLAGS="-X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY"
+          echo "Building AppMODBUS $VERSION"
           wails build -clean -platform ${{ matrix.platform }} ${{ matrix.flags }} -ldflags "$LDFLAGS"
 
       - name: Package (Windows)
@@ -130,8 +131,10 @@ jobs:
             exit 1
           fi
           (cd dist && sha256sum AppMODBUS-* > checksums.txt && cat checksums.txt)
+          go run ./cmd/updatekey check
           go run ./cmd/updatekey sign dist/checksums.txt
-          go run ./cmd/updatekey verify dist/checksums.txt "$(go run ./cmd/updatekey pubkey)"
+          PINNED=$(sed -n 's/^const PinnedUpdatePublicKey = "\(.*\)"$/\1/p' internal/version/version.go)
+          go run ./cmd/updatekey verify dist/checksums.txt "$PINNED"
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*

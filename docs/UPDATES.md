@@ -40,14 +40,22 @@ Settings (channel, automatic check, skipped version) are stored in
 
 2. In GitHub, open **Settings → Secrets and variables → Actions → New repository secret**.
    Create `UPDATE_SIGNING_KEY` and paste in the first (secret) value. Don't commit it or share it.
-3. That's all. CI derives the public key from the secret and compiles it into every build.
+3. Put the second (public) value in `PinnedUpdatePublicKey` in `internal/version/version.go`
+   and commit it. The public key is safe to publish.
+
+Every build has the pinned public key built in. CI runs `updatekey check` before building and
+before signing. If the secret doesn't match the pinned key, the run fails, so a wrong or
+replaced secret can never publish a release that installed copies would reject.
 
 > Keep a backup of the secret somewhere safe, such as a password manager. Installed copies
-> only accept updates signed with this key. If you lose or change it, every user has to
-> download one new version manually.
+> only accept updates signed with this key.
 
-Builds made without the secret (local `wails build`, forks) can still check for updates.
-They show a **Download** button instead of installing automatically.
+### Rotating the key
+
+Only do this if the secret is lost or leaked. Generate a new pair, update the secret and
+`PinnedUpdatePublicKey` together, and release. Copies built with the old key can't verify the
+new release, so their users must download it once by hand from the release page. After that,
+automatic updates work again.
 
 ## Publishing a release
 

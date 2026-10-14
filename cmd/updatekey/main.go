@@ -4,6 +4,7 @@
 //	go run ./cmd/updatekey pubkey            # public key of $UPDATE_SIGNING_KEY
 //	go run ./cmd/updatekey sign FILE         # write FILE.sig using $UPDATE_SIGNING_KEY
 //	go run ./cmd/updatekey verify FILE PUB   # check FILE.sig against a public key
+//	go run ./cmd/updatekey check             # $UPDATE_SIGNING_KEY matches the pinned key
 //
 // The private key is the base64 Ed25519 seed (32 bytes). Keep it only in the
 // UPDATE_SIGNING_KEY GitHub Actions secret.
@@ -17,6 +18,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"appmodbus/internal/version"
 )
 
 func main() {
@@ -40,7 +43,7 @@ func privateKey() (ed25519.PrivateKey, error) {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: updatekey generate | pubkey | sign FILE | verify FILE PUBKEY")
+		return errors.New("usage: updatekey generate | pubkey | check | sign FILE | verify FILE PUBKEY")
 	}
 	enc := base64.StdEncoding
 	switch args[0] {
@@ -52,7 +55,7 @@ func run(args []string) error {
 		fmt.Println("UPDATE_SIGNING_KEY (secret, store as a GitHub Actions secret):")
 		fmt.Println(enc.EncodeToString(priv.Seed()))
 		fmt.Println()
-		fmt.Println("Public key (embedded into builds automatically by CI):")
+		fmt.Println("Public key (put it in PinnedUpdatePublicKey in internal/version/version.go):")
 		fmt.Println(enc.EncodeToString(pub))
 	case "pubkey":
 		k, err := privateKey()
@@ -60,12 +63,24 @@ func run(args []string) error {
 			return err
 		}
 		fmt.Println(enc.EncodeToString(k.Public().(ed25519.PublicKey)))
+	case "check":
+		k, err := privateKey()
+		if err != nil {
+			return err
+		}
+		if err := checkPinned(k); err != nil {
+			return err
+		}
+		fmt.Println("UPDATE_SIGNING_KEY matches the pinned public key")
 	case "sign":
 		if len(args) != 2 {
 			return errors.New("usage: updatekey sign FILE")
 		}
 		k, err := privateKey()
 		if err != nil {
+			return err
+		}
+		if err := checkPinned(k); err != nil {
 			return err
 		}
 		data, err := os.ReadFile(args[1])
@@ -97,6 +112,16 @@ func run(args []string) error {
 		fmt.Println("signature OK")
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
+	}
+	return nil
+}
+
+// checkPinned refuses keys whose public half is not the pinned one.
+func checkPinned(k ed25519.PrivateKey) error {
+	got := base64.StdEncoding.EncodeToString(k.Public().(ed25519.PublicKey))
+	if got != version.PinnedUpdatePublicKey {
+		return fmt.Errorf("UPDATE_SIGNING_KEY does not match the pinned public key in internal/version "+
+			"(secret gives %s, pinned is %s); installed apps would reject this release", got, version.PinnedUpdatePublicKey)
 	}
 	return nil
 }
