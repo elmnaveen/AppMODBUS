@@ -100,6 +100,7 @@ const WRITE_FUNCS = [
   { code: 6, label: '06 Write Single Register' },
   { code: 15, label: '15 Write Multiple Coils' },
   { code: 16, label: '16 Write Multiple Registers' },
+  { code: 23, label: '23 Read/Write Multiple Registers' },
 ]
 
 interface ManualProps {
@@ -119,6 +120,9 @@ export function ManualWriteDialog({ connections, formats, defaults, onClose }: M
   const [coilOn, setCoilOn] = useState(true)
   const [error, setError] = useState('')
   const [ok, setOk] = useState('')
+  const [readAddr, setReadAddr] = useState(0)
+  const [readQty, setReadQty] = useState(10)
+  const [readBack, setReadBack] = useState<{ address: number; values: number[] } | null>(null)
 
   const regFormats = fn === 6 ? formats.filter((f) => f.registers === 1) : formats
 
@@ -140,6 +144,13 @@ export function ManualWriteDialog({ connections, formats, defaults, onClose }: M
           for (const v of items) values.push(...(await api.parseValue(format, v)))
           if (fn === 6 && values.length !== 1) throw new Error('Function 06 writes exactly one register')
         }
+      }
+      if (fn === 23) {
+        setReadBack(null)
+        const got = await api.readWrite({ connectionId: connId, slaveId: slave, readAddress: readAddr, readQuantity: readQty, writeAddress: address, values })
+        setReadBack({ address: readAddr, values: got })
+        setOk(`Wrote ${values.length} register(s) at ${address} and read ${got.length} from ${readAddr}`)
+        return
       }
       await api.write({ connectionId: connId, slaveId: slave, function: fn, address, values })
       setOk(`Wrote ${values.length} ${fn === 5 || fn === 15 ? 'coil(s)' : 'register(s)'} at address ${address}`)
@@ -171,10 +182,20 @@ export function ManualWriteDialog({ connections, formats, defaults, onClose }: M
         </select>
         <label className="lbl">Slave ID</label>
         <input type="number" min={0} max={255} value={slave} onChange={(e) => setSlave(Number(e.target.value))} />
-        <span className="hint">0 = broadcast (no response expected)</span>
-        <label className="lbl">Address</label>
+        {fn !== 23 && <span className="hint">0 = broadcast (no response expected)</span>}
+        <label className="lbl">{fn === 23 ? 'Write address' : 'Address'}</label>
         <input type="number" min={0} max={65535} value={address} onChange={(e) => setAddress(Number(e.target.value))} />
         <span className="hint">Protocol address (base 0)</span>
+        {fn === 23 && (
+          <>
+            <label className="lbl">Read address / quantity</label>
+            <div className="inline">
+              <input type="number" min={0} max={65535} value={readAddr} onChange={(e) => setReadAddr(Number(e.target.value))} />
+              <input type="number" min={1} max={125} value={readQty} onChange={(e) => setReadQty(Number(e.target.value))} />
+            </div>
+            <span className="hint">The slave writes first, then returns the registers read (1–125).</span>
+          </>
+        )}
         {fn === 5 ? (
           <>
             <label className="lbl">Value</label>
@@ -194,12 +215,19 @@ export function ManualWriteDialog({ connections, formats, defaults, onClose }: M
               </>
             )}
             <label className="lbl">{fn === 6 ? 'Value' : 'Values'}</label>
-            <textarea rows={fn === 6 ? 1 : 3} value={text} onChange={(e) => setText(e.target.value)} placeholder={fn === 15 ? '1, 0, 1, 1' : fn === 16 ? '100, 200, 300' : '1234'} />
+            <textarea rows={fn === 6 ? 1 : 3} value={text} onChange={(e) => setText(e.target.value)} placeholder={fn === 15 ? '1, 0, 1, 1' : fn === 16 || fn === 23 ? '100, 200, 300' : '1234'} />
             {fn !== 6 && <span className="hint">Separate values with commas or spaces.</span>}
           </>
         )}
         {error && <div className="alert full">{error}</div>}
         {ok && <div className="full" style={{ color: 'var(--ok)' }}>✓ {ok}</div>}
+        {fn === 23 && readBack && (
+          <div className="full rw-result">
+            {readBack.values.map((v, i) => (
+              <span key={i} className="mono"><span className="muted">{readBack.address + i}</span> {v}</span>
+            ))}
+          </div>
+        )}
       </div>
     </Modal>
   )

@@ -18,6 +18,7 @@ const (
 	FuncWriteSingleRegister    byte = 0x06
 	FuncWriteMultipleCoils     byte = 0x0F
 	FuncWriteMultipleRegisters byte = 0x10
+	FuncReadWriteRegisters     byte = 0x17
 )
 
 // Protocol limits from the Modbus Application Protocol spec v1.1b3.
@@ -26,6 +27,7 @@ const (
 	MaxReadRegisters  = 125
 	MaxWriteBits      = 1968
 	MaxWriteRegisters = 123
+	MaxRWWrite        = 121 // write part of FC23
 )
 
 // Exception codes.
@@ -113,6 +115,8 @@ func FunctionName(fc byte) string {
 		return "Write Multiple Coils"
 	case FuncWriteMultipleRegisters:
 		return "Write Multiple Registers"
+	case FuncReadWriteRegisters:
+		return "Read/Write Multiple Registers"
 	case FuncDiagnostics:
 		return "Diagnostics"
 	case FuncEncapsulated:
@@ -208,6 +212,27 @@ func WriteMultipleRegistersRequest(address int, values []uint16) (PDU, error) {
 	return PDU{Function: FuncWriteMultipleRegisters, Data: d}, nil
 }
 
+// ReadWriteRegistersRequest builds a FC23 request: the slave writes values
+// at writeAddress, then returns readQty registers from readAddress.
+func ReadWriteRegistersRequest(readAddress, readQty, writeAddress int, values []uint16) (PDU, error) {
+	if err := checkRange(readAddress, readQty, MaxReadRegisters); err != nil {
+		return PDU{}, fmt.Errorf("read: %w", err)
+	}
+	if err := checkRange(writeAddress, len(values), MaxRWWrite); err != nil {
+		return PDU{}, fmt.Errorf("write: %w", err)
+	}
+	d := make([]byte, 9+2*len(values))
+	binary.BigEndian.PutUint16(d[0:], uint16(readAddress))
+	binary.BigEndian.PutUint16(d[2:], uint16(readQty))
+	binary.BigEndian.PutUint16(d[4:], uint16(writeAddress))
+	binary.BigEndian.PutUint16(d[6:], uint16(len(values)))
+	d[8] = byte(2 * len(values))
+	for i, v := range values {
+		binary.BigEndian.PutUint16(d[9+2*i:], v)
+	}
+	return PDU{Function: FuncReadWriteRegisters, Data: d}, nil
+}
+
 // CheckResponse verifies that resp answers req, decoding exception responses.
 func CheckResponse(req, resp PDU) error {
 	if resp.Function == req.Function|0x80 {
@@ -231,6 +256,11 @@ func CheckResponse(req, resp PDU) error {
 		}
 		if int(resp.Data[0]) != want {
 			return invalid("expected %d data bytes, got %d", want, resp.Data[0])
+		}
+	case FuncReadWriteRegisters:
+		qty := int(binary.BigEndian.Uint16(req.Data[2:]))
+		if len(resp.Data) < 1 || int(resp.Data[0]) != len(resp.Data)-1 || int(resp.Data[0]) != 2*qty {
+			return invalid("expected %d data bytes", 2*qty)
 		}
 	case FuncWriteSingleCoil, FuncWriteSingleRegister:
 		if len(resp.Data) != 4 || string(resp.Data) != string(req.Data[:4]) {

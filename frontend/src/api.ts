@@ -38,6 +38,8 @@ export const api = {
     g.SetCellFormat(id, address, format),
 
   write: (w: WriteRequest): Promise<void> => g.Write(w),
+  readWrite: (r: { connectionId: string; slaveId: number; readAddress: number; readQuantity: number; writeAddress: number; values: number[] }): Promise<number[]> =>
+    g.ReadWrite(r),
   writeCell: (id: string, address: number, value: string, forceMultiple: boolean): Promise<void> =>
     g.WriteCell(id, address, value, forceMultiple),
   parseValue: (format: string, value: string): Promise<number[]> => g.ParseValue(format, value),

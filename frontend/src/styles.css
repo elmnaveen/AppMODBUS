@@ -534,3 +534,4 @@ input:disabled, select:disabled { background: var(--panel-2); color: var(--muted
 .sim-limits p { margin: 0 0 6px; font-size: 11.5px; }
 .sim-limits label { margin-bottom: 4px; }
 .res-tbl th.num { text-align: right; }
+.rw-result { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 2px 10px; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; max-height: 160px; overflow: auto; font-size: 12px; }

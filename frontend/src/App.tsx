@@ -360,7 +360,7 @@ export default function App() {
               <div className="empty">
                 <div className="brand-mark" style={{ width: 44, height: 44, fontSize: 16, margin: '0 auto 14px', borderRadius: 10 }}>MB</div>
                 <h2>Welcome to AppMODBUS</h2>
-                <p>A Modbus master for testing slaves over RTU, TCP/IP and RTU over TCP/UDP.</p>
+                <p>A Modbus master for testing slaves over RTU and ASCII serial lines, Modbus TCP/UDP, and RTU/ASCII tunnelled over TCP or UDP.</p>
                 <ol>
                   <li>Set up a <b>Connection</b> (serial port or IP address)</li>
                   <li>Add a <b>poll window</b> with slave ID, function, address and quantity</li>

@@ -146,12 +146,12 @@ func (a *App) apply(f workspace.File, path string, dirty bool) LoadResult {
 	}
 	var missing []MissingPort
 	for _, c := range f.Connections {
-		if c.Mode == modbus.ModeRTU && c.SerialPort != "" && !slices.Contains(ports, c.SerialPort) {
+		if c.Mode.IsSerial() && c.SerialPort != "" && !slices.Contains(ports, c.SerialPort) {
 			missing = append(missing, MissingPort{ConnectionID: c.ID, Name: c.Name, Port: c.SerialPort})
 		}
 	}
 	if s := f.Simulator; s != nil && s.Running {
-		if s.Config.Mode == modbus.ModeRTU && !slices.Contains(ports, s.Config.SerialPort) {
+		if s.Config.Mode.IsSerial() && !slices.Contains(ports, s.Config.SerialPort) {
 			missing = append(missing, MissingPort{Name: "Simulator", Port: s.Config.SerialPort})
 		} else if err := a.engine.Sim.Start(s.Config); err != nil {
 			warnings = append(warnings, "simulator: "+err.Error())

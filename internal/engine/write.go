@@ -74,6 +74,48 @@ func (e *Engine) Write(w WriteRequest) error {
 	return nil
 }
 
+// ReadWriteRequest is a FC23 transaction from the Write dialog.
+type ReadWriteRequest struct {
+	ConnectionID string `json:"connectionId"`
+	SlaveID      int    `json:"slaveId"`
+	ReadAddress  int    `json:"readAddress"`
+	ReadQuantity int    `json:"readQuantity"`
+	WriteAddress int    `json:"writeAddress"`
+	Values       []int  `json:"values"`
+}
+
+// ReadWrite performs FC23 and returns the registers read.
+func (e *Engine) ReadWrite(r ReadWriteRequest) ([]int, error) {
+	c := e.conn(r.ConnectionID)
+	if c == nil {
+		return nil, errors.New("unknown connection")
+	}
+	if r.SlaveID < 1 || r.SlaveID > 255 {
+		return nil, errors.New("slave ID must be 1..255 (function 23 cannot be broadcast)")
+	}
+	regs := make([]uint16, len(r.Values))
+	for i, v := range r.Values {
+		if v < -32768 || v > 65535 {
+			return nil, fmt.Errorf("value %d does not fit a register", v)
+		}
+		regs[i] = uint16(v)
+	}
+	if len(regs) == 0 {
+		return nil, errors.New("no values to write")
+	}
+	got, err := c.client.ReadWriteRegisters(byte(r.SlaveID), r.ReadAddress, r.ReadQuantity, r.WriteAddress, regs, time.Duration(c.cfg.TimeoutMs)*time.Millisecond)
+	e.setConnErr(c, err)
+	if err != nil {
+		return nil, errors.New(describeErr(err))
+	}
+	e.refresh(r.ConnectionID)
+	out := make([]int, len(got))
+	for i, v := range got {
+		out[i] = int(v)
+	}
+	return out, nil
+}
+
 // WriteCell writes a value typed into a poll window cell, encoding it with
 // the cell's display format. forceMultiple selects FC15/FC16 even for a
 // single coil/register (some devices only accept those).

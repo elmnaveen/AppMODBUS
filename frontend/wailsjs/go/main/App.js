@@ -170,6 +170,10 @@ export function ReadOnce(arg1) {
   return window['go']['main']['App']['ReadOnce'](arg1);
 }
 
+export function ReadWrite(arg1) {
+  return window['go']['main']['App']['ReadWrite'](arg1);
+}
+
 export function RecordedSeries() {
   return window['go']['main']['App']['RecordedSeries']();
 }

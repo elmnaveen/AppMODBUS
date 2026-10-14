@@ -1,4 +1,7 @@
-export type Mode = 'rtu' | 'tcp' | 'rtu-tcp' | 'rtu-udp'
+export type Mode = 'rtu' | 'ascii' | 'tcp' | 'udp' | 'rtu-tcp' | 'ascii-tcp' | 'rtu-udp'
+
+export const isSerialMode = (m: Mode) => m === 'rtu' || m === 'ascii'
+export const isUDPMode = (m: Mode) => m === 'udp' || m === 'rtu-udp'
 
 export interface ConnectionConfig {
   id: string
@@ -128,15 +131,26 @@ export type SimTable = 'coils' | 'discrete' | 'holding' | 'input'
 
 export const MODE_LABELS: Record<Mode, string> = {
   rtu: 'Modbus RTU (serial)',
+  ascii: 'Modbus ASCII (serial)',
   tcp: 'Modbus TCP/IP',
+  udp: 'Modbus UDP/IP',
   'rtu-tcp': 'RTU over TCP',
+  'ascii-tcp': 'ASCII over TCP',
   'rtu-udp': 'RTU over UDP',
 }
 
+export const MODE_GROUPS: { label: string; modes: Mode[] }[] = [
+  { label: 'Serial port', modes: ['rtu', 'ascii'] },
+  { label: 'Network', modes: ['tcp', 'udp', 'rtu-tcp', 'ascii-tcp', 'rtu-udp'] },
+]
+
 export const MODE_SHORT: Record<Mode, string> = {
   rtu: 'RTU (serial)',
+  ascii: 'ASCII (serial)',
   tcp: 'TCP/IP',
+  udp: 'UDP/IP',
   'rtu-tcp': 'RTU over TCP',
+  'ascii-tcp': 'ASCII over TCP',
   'rtu-udp': 'RTU over UDP',
 }
 

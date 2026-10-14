@@ -268,7 +268,7 @@ func (e *Engine) newID(prefix string) string {
 
 func normalizeConn(c *ConnectionConfig) error {
 	switch c.Mode {
-	case modbus.ModeRTU:
+	case modbus.ModeRTU, modbus.ModeASCII:
 		if c.SerialPort == "" {
 			return errors.New("select a serial port")
 		}
@@ -284,7 +284,7 @@ func normalizeConn(c *ConnectionConfig) error {
 		if c.StopBits != 2 {
 			c.StopBits = 1
 		}
-	case modbus.ModeTCP, modbus.ModeRTUOverTCP, modbus.ModeRTUOverUDP:
+	case modbus.ModeTCP, modbus.ModeRTUOverTCP, modbus.ModeRTUOverUDP, modbus.ModeASCIITCP, modbus.ModeUDP:
 		c.Host = strings.TrimSpace(c.Host)
 		if c.Host == "" {
 			return errors.New("enter an IP address or host name")

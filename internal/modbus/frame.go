@@ -54,7 +54,7 @@ func RTUResponseLength(head []byte) int {
 		return 5
 	}
 	switch fc {
-	case FuncReadCoils, FuncReadDiscreteInputs, FuncReadHoldingRegisters, FuncReadInputRegisters:
+	case FuncReadCoils, FuncReadDiscreteInputs, FuncReadHoldingRegisters, FuncReadInputRegisters, FuncReadWriteRegisters:
 		return 5 + int(head[2])
 	case FuncWriteSingleCoil, FuncWriteSingleRegister, FuncWriteMultipleCoils, FuncWriteMultipleRegisters, FuncDiagnostics:
 		return 8
@@ -98,6 +98,11 @@ func RTURequestLength(head []byte) (length int, need int) {
 		return 9 + int(head[6]), 7
 	case FuncDiagnostics:
 		return 8, 2
+	case FuncReadWriteRegisters:
+		if len(head) < 11 {
+			return 0, 11
+		}
+		return 13 + int(head[10]), 11
 	case FuncEncapsulated:
 		return 7, 2
 	}

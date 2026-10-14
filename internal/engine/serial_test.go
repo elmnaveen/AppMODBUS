@@ -13,7 +13,10 @@ import (
 
 // TestSerialRTU runs master and simulator over a virtual serial cable made
 // by socat. It is skipped where socat is not installed (e.g. Windows CI).
-func TestSerialRTU(t *testing.T) {
+func TestSerialRTU(t *testing.T)   { serialRoundTrip(t, modbus.ModeRTU, 8) }
+func TestSerialASCII(t *testing.T) { serialRoundTrip(t, modbus.ModeASCII, 7) }
+
+func serialRoundTrip(t *testing.T, mode modbus.Mode, dataBits int) {
 	if _, err := exec.LookPath("socat"); err != nil {
 		t.Skip("socat not installed")
 	}
@@ -33,12 +36,12 @@ func TestSerialRTU(t *testing.T) {
 
 	e := New(nil)
 	defer e.Shutdown()
-	if err := e.Sim.Start(simulator.Config{Mode: modbus.ModeRTU, SerialPort: b, BaudRate: 19200, DataBits: 8, Parity: "E", StopBits: 1, SlaveID: 7}); err != nil {
+	if err := e.Sim.Start(simulator.Config{Mode: mode, SerialPort: b, BaudRate: 19200, DataBits: dataBits, Parity: "E", StopBits: 1, SlaveID: 7}); err != nil {
 		t.Fatal(err)
 	}
 	e.Sim.Store.Write(simulator.HoldingRegisters, 100, []int{11, 22, 33})
 
-	conn, err := e.SaveConnection(ConnectionConfig{Mode: modbus.ModeRTU, SerialPort: a, BaudRate: 19200, Parity: "E", TimeoutMs: 500})
+	conn, err := e.SaveConnection(ConnectionConfig{Mode: mode, SerialPort: a, BaudRate: 19200, DataBits: dataBits, Parity: "E", TimeoutMs: 500})
 	if err != nil {
 		t.Fatal(err)
 	}

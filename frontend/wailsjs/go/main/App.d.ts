@@ -94,6 +94,8 @@ export function ReadDeviceIdentification(arg1:string,arg2:number,arg3:number):Pr
 
 export function ReadOnce(arg1:string):Promise<void>;
 
+export function ReadWrite(arg1:engine.ReadWriteRequest):Promise<Array<number>>;
+
 export function RecordedSeries():Promise<Array<recorder.SeriesInfo>>;
 
 export function RemapSerialPort(arg1:string,arg2:string):Promise<void>;

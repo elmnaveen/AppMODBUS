@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, errText } from '../api'
-import { MODE_LABELS, type Mode, type SimConfig, type SimStatus, type SimTable } from '../types'
+import { isSerialMode, MODE_LABELS, type Mode, type SimConfig, type SimStatus, type SimTable } from '../types'
 import { IconPlay, IconStop, IconX } from './Icons'
 
 export const defaultSim: SimConfig = {
@@ -75,7 +75,7 @@ export function SimulatorPanel({ onClose, onStatus }: Props) {
     setValues((vals) => vals.map((x, k) => (k === i ? v & 0xffff : x)))
   }
 
-  const isSerial = cfg.mode === 'rtu'
+  const isSerial = isSerialMode(cfg.mode)
   return (
     <aside className="drawer">
       <div className="panel-head" style={{ padding: '8px 12px' }}>
@@ -100,8 +100,12 @@ export function SimulatorPanel({ onClose, onStatus }: Props) {
                   <label className="lbl">Baud / format</label>
                   <div className="inline">
                     <input type="number" disabled={running} value={cfg.baudRate} onChange={(e) => set('baudRate', Number(e.target.value))} />
-                    <select disabled={running} value={cfg.parity} onChange={(e) => set('parity', e.target.value)}>
-                      <option value="N">8N1</option><option value="E">8E1</option><option value="O">8O1</option>
+                    <select
+                      disabled={running}
+                      value={`${cfg.dataBits || 8}${cfg.parity}`}
+                      onChange={(e) => setCfg((c) => ({ ...c, dataBits: Number(e.target.value[0]), parity: e.target.value[1] }))}
+                    >
+                      {['8N', '8E', '8O', '7E', '7O', '7N'].map((f) => <option key={f} value={f}>{f}1</option>)}
                     </select>
                   </div>
                 </>

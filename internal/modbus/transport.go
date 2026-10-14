@@ -18,11 +18,17 @@ import (
 type Mode string
 
 const (
-	ModeRTU        Mode = "rtu"     // RTU over a serial port
-	ModeTCP        Mode = "tcp"     // Modbus TCP/IP (MBAP)
-	ModeRTUOverTCP Mode = "rtu-tcp" // RTU frames tunnelled over a TCP socket
-	ModeRTUOverUDP Mode = "rtu-udp" // RTU frames carried in UDP datagrams
+	ModeRTU        Mode = "rtu"       // RTU over a serial port
+	ModeTCP        Mode = "tcp"       // Modbus TCP/IP (MBAP)
+	ModeRTUOverTCP Mode = "rtu-tcp"   // RTU frames tunnelled over a TCP socket
+	ModeRTUOverUDP Mode = "rtu-udp"   // RTU frames carried in UDP datagrams
+	ModeASCII      Mode = "ascii"     // Modbus ASCII over a serial port
+	ModeASCIITCP   Mode = "ascii-tcp" // ASCII frames tunnelled over a TCP socket
+	ModeUDP        Mode = "udp"       // Modbus UDP (MBAP header in each datagram)
 )
+
+// IsSerial reports whether the mode uses a serial port.
+func (m Mode) IsSerial() bool { return m == ModeRTU || m == ModeASCII }
 
 // Config describes how to reach a slave.
 type Config struct {
@@ -53,6 +59,12 @@ func (c Config) Describe() string {
 		return fmt.Sprintf("RTU/TCP %s", c.address())
 	case ModeRTUOverUDP:
 		return fmt.Sprintf("RTU/UDP %s", c.address())
+	case ModeASCII:
+		return fmt.Sprintf("ASCII %s %d-%d%s%d", c.SerialPort, c.BaudRate, c.DataBits, c.Parity, c.StopBits)
+	case ModeASCIITCP:
+		return fmt.Sprintf("ASCII/TCP %s", c.address())
+	case ModeUDP:
+		return fmt.Sprintf("UDP %s", c.address())
 	}
 	return string(c.Mode)
 }
@@ -94,7 +106,7 @@ func NewTransport(cfg Config, traffic TrafficFunc) (Transport, error) {
 		cfg.ConnectTimeout = 3 * time.Second
 	}
 	switch cfg.Mode {
-	case ModeRTU:
+	case ModeRTU, ModeASCII:
 		if cfg.SerialPort == "" {
 			return nil, errors.New("no serial port selected")
 		}
@@ -107,13 +119,16 @@ func NewTransport(cfg Config, traffic TrafficFunc) (Transport, error) {
 		if cfg.Parity == "" {
 			cfg.Parity = "N"
 		}
+		if cfg.Mode == ModeASCII {
+			return &asciiTransport{dial: func() (stream, error) { return openSerial(cfg) }, traffic: traffic}, nil
+		}
 		t35 := SerialFrameTimes(cfg.BaudRate, cfg.DataBits, cfg.Parity, cfg.StopBits)
 		return &rtuTransport{
 			dial:    func() (stream, error) { return openSerial(cfg) },
 			silence: time.Duration(t35 * float64(time.Millisecond)),
 			traffic: traffic,
 		}, nil
-	case ModeTCP, ModeRTUOverTCP, ModeRTUOverUDP:
+	case ModeTCP, ModeRTUOverTCP, ModeRTUOverUDP, ModeASCIITCP, ModeUDP:
 		if cfg.Host == "" || cfg.Port <= 0 || cfg.Port > 65535 {
 			return nil, errors.New("invalid host or port")
 		}
@@ -124,6 +139,19 @@ func NewTransport(cfg Config, traffic TrafficFunc) (Transport, error) {
 	switch cfg.Mode {
 	case ModeTCP:
 		return &tcpTransport{addr: addr, timeout: cfg.ConnectTimeout, traffic: traffic}, nil
+	case ModeASCIITCP:
+		return &asciiTransport{
+			dial: func() (stream, error) {
+				c, err := net.DialTimeout("tcp", addr, cfg.ConnectTimeout)
+				if err != nil {
+					return nil, err
+				}
+				return &netStream{c}, nil
+			},
+			traffic: traffic,
+		}, nil
+	case ModeUDP:
+		return &mbapUDPTransport{addr: addr, traffic: traffic}, nil
 	case ModeRTUOverTCP:
 		return &rtuTransport{
 			dial: func() (stream, error) {
@@ -632,6 +660,23 @@ func (c *Client) Read(unit, fc byte, address, quantity int, timeout time.Duratio
 		return DecodeBits(resp, quantity), nil, d, nil
 	}
 	return nil, DecodeRegisters(resp), d, nil
+}
+
+// ReadWriteRegisters performs FC23: writes values at writeAddress, then
+// reads readQty registers from readAddress, in one transaction.
+func (c *Client) ReadWriteRegisters(unit byte, readAddress, readQty, writeAddress int, values []uint16, timeout time.Duration) ([]uint16, error) {
+	req, err := ReadWriteRegistersRequest(readAddress, readQty, writeAddress, values)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.Do(unit, req, timeout)
+	if err != nil {
+		return nil, err
+	}
+	if unit == 0 {
+		return nil, errors.New("function 23 cannot be broadcast")
+	}
+	return DecodeRegisters(resp), nil
 }
 
 // ReadBits performs FC01/FC02.

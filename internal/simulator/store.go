@@ -285,6 +285,30 @@ func (s *Store) Handle(req modbus.PDU) modbus.PDU {
 		}
 		s.mu.Unlock()
 		return modbus.PDU{Function: fc, Data: append([]byte(nil), d[:4]...)}
+
+	case modbus.FuncReadWriteRegisters:
+		if len(d) < 9 {
+			return exception(fc, modbus.ExIllegalDataValue)
+		}
+		ra, rq, wa, wq, count := u16(0), u16(2), u16(4), u16(6), int(d[8])
+		if rq < 1 || rq > modbus.MaxReadRegisters || wq < 1 || wq > modbus.MaxRWWrite || count != 2*wq || len(d) != 9+count {
+			return exception(fc, modbus.ExIllegalDataValue)
+		}
+		if ra+rq > 0x10000 || wa+wq > 0x10000 || !s.checkLimits(HoldingRegisters, ra, rq) || !s.checkLimits(HoldingRegisters, wa, wq) {
+			return exception(fc, modbus.ExIllegalDataAddress)
+		}
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		// The write is performed before the read (spec 6.17).
+		for i := 0; i < wq; i++ {
+			s.holding[wa+i] = binary.BigEndian.Uint16(d[9+2*i:])
+		}
+		out := make([]byte, 1+2*rq)
+		out[0] = byte(2 * rq)
+		for i := 0; i < rq; i++ {
+			binary.BigEndian.PutUint16(out[1+2*i:], s.holding[ra+i])
+		}
+		return modbus.PDU{Function: fc, Data: out}
 	}
 	return exception(fc, modbus.ExIllegalFunction)
 }

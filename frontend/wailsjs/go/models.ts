@@ -576,6 +576,28 @@ export namespace engine {
 	
 	
 	
+	export class ReadWriteRequest {
+	    connectionId: string;
+	    slaveId: number;
+	    readAddress: number;
+	    readQuantity: number;
+	    writeAddress: number;
+	    values: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ReadWriteRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connectionId = source["connectionId"];
+	        this.slaveId = source["slaveId"];
+	        this.readAddress = source["readAddress"];
+	        this.readQuantity = source["readQuantity"];
+	        this.writeAddress = source["writeAddress"];
+	        this.values = source["values"];
+	    }
+	}
 	export class ScanState {
 	    kind: string;
 	    running: boolean;

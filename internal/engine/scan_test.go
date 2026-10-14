@@ -143,3 +143,23 @@ func TestParseIPRange(t *testing.T) {
 		}
 	}
 }
+
+func TestReadWrite23(t *testing.T) {
+	for _, mode := range []modbus.Mode{modbus.ModeTCP, modbus.ModeRTUOverTCP, modbus.ModeASCIITCP, modbus.ModeUDP} {
+		t.Run(string(mode), func(t *testing.T) {
+			e := New(nil)
+			defer e.Shutdown()
+			port := startSimCfg(t, e, simulator.Config{Mode: mode})
+			e.Sim.Store.Write(simulator.HoldingRegisters, 0, []int{1, 2, 3, 4})
+			conn, _ := e.SaveConnection(ConnectionConfig{Mode: mode, Host: "127.0.0.1", Port: port, TimeoutMs: 500})
+			got, err := e.ReadWrite(ReadWriteRequest{ConnectionID: conn.ID, SlaveID: 1, ReadAddress: 0, ReadQuantity: 4, WriteAddress: 2, Values: []int{30, 40}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			// The write happens first, so the read sees it.
+			if !reflect.DeepEqual(got, []int{1, 2, 30, 40}) {
+				t.Fatalf("read back %v", got)
+			}
+		})
+	}
+}
