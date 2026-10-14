@@ -108,9 +108,9 @@ wails build -nsis                  # Windows installer
 Run the tests with `go test -race ./internal/...`. The serial RTU test uses `socat` to create a
 virtual serial cable and is skipped if `socat` is not installed.
 
-CI (`.github/workflows/build.yml`) does not run on ordinary pushes. Pull requests run the tests only (Go tests and the
-frontend type check). The full build of Windows (exe + NSIS installer), macOS (universal .app) and Linux binaries runs when
-you start it from Actions → Build → Run workflow, or push a `v*` tag. With a version (or a tag) it also publishes a GitHub release with
+CI (`.github/workflows/build.yml`) builds Windows (exe + NSIS installer), macOS (universal .app) and Linux binaries
+on every push to `main`, on `v*` tags and when started from Actions → Build → Run workflow. Pull requests run the tests
+only (Go tests and the frontend type check); pushes to other branches run nothing. With a version (or a tag) it also publishes a GitHub release with
 signed checksums, which installed copies pick up as an update. See [docs/UPDATES.md](docs/UPDATES.md) for the one-time
 signing-key setup.
 

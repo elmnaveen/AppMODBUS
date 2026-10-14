@@ -1,9 +1,10 @@
 name: Build
 
-# Full builds run only for releases (v* tags) and manual runs; pull requests
-# run just the test job. Pushing to a branch or to main runs nothing.
+# Full builds run on pushes to main, releases (v* tags) and manual runs;
+# pull requests run just the test job. Other branch pushes run nothing.
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   pull_request:
   # Actions > Build > Run workflow. With a version this publishes a release
