@@ -81,8 +81,8 @@ On Ubuntu, double-click the `.deb` or run `sudo apt install ./ModbusStudio-ubunt
 WebKitGTK dependency, and Modbus Studio appears in the app menu. To use serial ports, add yourself to the
 `dialout` group once: `sudo usermod -aG dialout $USER`, then log out and in again.
 
-Releases also list the same files under their old `AppMODBUS-…` names. Those copies let installs of v1.0 and
-older update themselves; download the `ModbusStudio-…` files.
+Modbus Studio 2.0 replaces the earlier AppMODBUS releases (v1.0 and older). Those versions do not update
+themselves to 2.0; install it from the release page once, and it updates itself from then on.
 
 Installed copies update themselves (see [docs/UPDATES.md](docs/UPDATES.md)). A `.deb` installation is
 updated with the new `.deb` after a password prompt.

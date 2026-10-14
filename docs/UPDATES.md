@@ -92,13 +92,9 @@ API, for example a local test server. Signature verification still applies.
 
 ## Product name vs. file names
 
-The app was renamed from AppMODBUS to **Modbus Studio**, and release packages are named `ModbusStudio-…`
-(for example `ModbusStudio-windows-amd64-installer.exe`). Builds from the rename on look for these names.
-
-Installs of v1.0.x and older look only for `AppMODBUS-…`. So the release job also attaches an identical copy of
-each package under its old name, and lists both names in the signed `checksums.txt`. Those installs update to the
-new version once, and look for the new names from then on. Once no v1.0.x installs are left, drop the copy step
-in the release job (`.github/workflows/build.yml`, "Checksums and signature").
+Release packages are named `ModbusStudio-…` (for example `ModbusStudio-windows-amd64-installer.exe`), and the
+updater looks for exactly these names. Releases up to v1.0.0 were published as AppMODBUS and used
+`AppMODBUS-…` names; those installs do not find 2.0 and later and must install 2.0 once by hand.
 
 These keep the original `AppMODBUS` / `appmodbus` identifiers on purpose, because installed copies depend on them:
 

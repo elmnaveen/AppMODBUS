@@ -364,16 +364,12 @@ func TestInstallDebUsesPkexec(t *testing.T) {
 	}
 }
 
-// Releases carry the package under the old name too, for v1.0.x installs;
-// current builds must pick the ModbusStudio- name.
-func TestPrefersCurrentAssetName(t *testing.T) {
+// A release that only has the pre-rename AppMODBUS- package is not offered.
+func TestAssetNames(t *testing.T) {
 	fx := newFixture(t, func(fx *fixture) []fakeRelease {
-		files := fx.signedFiles(linuxPkg, []byte("tgz"))
-		files[LegacyAssetPrefix+"linux-amd64.tar.gz"] = files[linuxPkg]
-		return []fakeRelease{{tag: "v1.1.0", files: files}}
+		return []fakeRelease{{tag: "v1.1.0", files: fx.signedFiles("AppMODBUS-linux-amd64.tar.gz", []byte("tgz"))}}
 	})
-	rel, err := fx.updater("1.0.0").Check(context.Background(), Stable)
-	if err != nil || rel == nil || rel.Asset.Name != linuxPkg {
+	if rel, err := fx.updater("1.0.0").Check(context.Background(), Stable); err != nil || rel != nil {
 		t.Fatalf("check %+v %v", rel, err)
 	}
 	for _, goos := range []string{"windows", "darwin", "linux"} {

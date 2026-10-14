@@ -237,10 +237,7 @@ jobs:
             echo "::error::UPDATE_SIGNING_KEY secret is not set; see docs/UPDATES.md"
             exit 1
           fi
-          # Copies under the pre-rename names let v1.0.x installs, which only
-          # look for AppMODBUS-*, update to this release (see docs/UPDATES.md).
-          (cd dist && for f in ModbusStudio-*; do cp "$f" "AppMODBUS-${f#ModbusStudio-}"; done)
-          (cd dist && sha256sum ModbusStudio-* AppMODBUS-* > checksums.txt && cat checksums.txt)
+          (cd dist && sha256sum ModbusStudio-* > checksums.txt && cat checksums.txt)
           go run ./cmd/updatekey check
           go run ./cmd/updatekey sign dist/checksums.txt
           PINNED=$(sed -n 's/^const PinnedUpdatePublicKey = "\(.*\)"$/\1/p' internal/version/version.go)

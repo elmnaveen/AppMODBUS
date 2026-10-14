@@ -81,13 +81,8 @@ const (
 	LinuxDeb
 )
 
-// AssetPrefix starts every release package name. Releases also carry copies
-// named with LegacyAssetPrefix, the name used up to v1.0.x, so installs of
-// those versions (which look only for the old names) can still update.
-const (
-	AssetPrefix       = "ModbusStudio-"
-	LegacyAssetPrefix = "AppMODBUS-"
-)
+// AssetPrefix starts every release package name.
+const AssetPrefix = "ModbusStudio-"
 
 // Linux .deb asset names.
 const (
