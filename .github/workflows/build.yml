@@ -115,25 +115,25 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item build/bin/AppMODBUS.exe dist/AppMODBUS-windows-amd64.exe
+          Copy-Item build/bin/AppMODBUS.exe dist/ModbusStudio-windows-amd64.exe
           $installer = Get-ChildItem build/bin -Filter *installer.exe | Select-Object -First 1
           if (-not $installer) { throw "NSIS installer was not built (is makensis installed?)" }
-          Copy-Item $installer.FullName dist/AppMODBUS-windows-amd64-installer.exe
+          Copy-Item $installer.FullName dist/ModbusStudio-windows-amd64-installer.exe
       - name: Package (macOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p dist
-          ditto -c -k --keepParent build/bin/AppMODBUS.app dist/AppMODBUS-macos-universal.zip
+          ditto -c -k --keepParent build/bin/AppMODBUS.app dist/ModbusStudio-macos-universal.zip
       - name: Package (Linux)
         if: runner.os == 'Linux'
         run: |
           mkdir -p dist
-          tar -C build/bin -czf dist/AppMODBUS-linux-amd64.tar.gz AppMODBUS
-          build/linux/package-deb.sh "$VERSION" build/bin/AppMODBUS libwebkit2gtk-4.1-0 dist/AppMODBUS-ubuntu-24.04-amd64.deb
+          tar -C build/bin -czf dist/ModbusStudio-linux-amd64.tar.gz AppMODBUS
+          build/linux/package-deb.sh "$VERSION" build/bin/AppMODBUS libwebkit2gtk-4.1-0 dist/ModbusStudio-ubuntu-24.04-amd64.deb
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AppMODBUS-${{ runner.os }}
+          name: ModbusStudio-${{ runner.os }}
           path: dist/*
 
   build-linux-legacy:
@@ -186,10 +186,10 @@ jobs:
       - name: Package
         run: |
           mkdir -p dist
-          build/linux/package-deb.sh "$VERSION" build/bin/AppMODBUS-legacy libwebkit2gtk-4.0-37 dist/AppMODBUS-ubuntu-18.04-to-22.04-amd64.deb
+          build/linux/package-deb.sh "$VERSION" build/bin/AppMODBUS-legacy libwebkit2gtk-4.0-37 dist/ModbusStudio-ubuntu-18.04-to-22.04-amd64.deb
       - uses: actions/upload-artifact@v4
         with:
-          name: AppMODBUS-Linux-legacy
+          name: ModbusStudio-Linux-legacy
           path: dist/*
 
   release:
@@ -237,7 +237,10 @@ jobs:
             echo "::error::UPDATE_SIGNING_KEY secret is not set; see docs/UPDATES.md"
             exit 1
           fi
-          (cd dist && sha256sum AppMODBUS-* > checksums.txt && cat checksums.txt)
+          # Copies under the pre-rename names let v1.0.x installs, which only
+          # look for AppMODBUS-*, update to this release (see docs/UPDATES.md).
+          (cd dist && for f in ModbusStudio-*; do cp "$f" "AppMODBUS-${f#ModbusStudio-}"; done)
+          (cd dist && sha256sum ModbusStudio-* AppMODBUS-* > checksums.txt && cat checksums.txt)
           go run ./cmd/updatekey check
           go run ./cmd/updatekey sign dist/checksums.txt
           PINNED=$(sed -n 's/^const PinnedUpdatePublicKey = "\(.*\)"$/\1/p' internal/version/version.go)

@@ -71,15 +71,18 @@ Download from the [latest release](https://github.com/elmnaveen/AppMODBUS/releas
 
 | System | File |
 | --- | --- |
-| Windows 10/11 | `AppMODBUS-windows-amd64-installer.exe` (or the portable `AppMODBUS-windows-amd64.exe`) |
-| macOS | `AppMODBUS-macos-universal.zip` (Intel and Apple Silicon) |
-| Ubuntu 18.04, 20.04, 22.04 | `AppMODBUS-ubuntu-18.04-to-22.04-amd64.deb` |
-| Ubuntu 24.04 and newer | `AppMODBUS-ubuntu-24.04-amd64.deb` |
-| Other Linux (portable) | `AppMODBUS-linux-amd64.tar.gz` (needs WebKitGTK 4.1) |
+| Windows 10/11 | `ModbusStudio-windows-amd64-installer.exe` (or the portable `ModbusStudio-windows-amd64.exe`) |
+| macOS | `ModbusStudio-macos-universal.zip` (Intel and Apple Silicon) |
+| Ubuntu 18.04, 20.04, 22.04 | `ModbusStudio-ubuntu-18.04-to-22.04-amd64.deb` |
+| Ubuntu 24.04 and newer | `ModbusStudio-ubuntu-24.04-amd64.deb` |
+| Other Linux (portable) | `ModbusStudio-linux-amd64.tar.gz` (needs WebKitGTK 4.1) |
 
-On Ubuntu, double-click the `.deb` or run `sudo apt install ./AppMODBUS-ubuntu-*.deb`. apt installs the
+On Ubuntu, double-click the `.deb` or run `sudo apt install ./ModbusStudio-ubuntu-*.deb`. apt installs the
 WebKitGTK dependency, and Modbus Studio appears in the app menu. To use serial ports, add yourself to the
 `dialout` group once: `sudo usermod -aG dialout $USER`, then log out and in again.
+
+Releases also list the same files under their old `AppMODBUS-…` names. Those copies let installs of v1.0 and
+older update themselves; download the `ModbusStudio-…` files.
 
 Installed copies update themselves (see [docs/UPDATES.md](docs/UPDATES.md)). A `.deb` installation is
 updated with the new `.deb` after a password prompt.
