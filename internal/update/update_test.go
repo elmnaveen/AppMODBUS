@@ -114,7 +114,7 @@ func (fx *fixture) updater(current string) *Updater {
 	return &Updater{APIBase: fx.srv.URL, Repo: "acme/app", Current: current, PublicKey: fx.pub, GOOS: "linux", GOARCH: "amd64"}
 }
 
-const linuxPkg = "AppMODBUS-linux-amd64.tar.gz"
+const linuxPkg = "ModbusStudio-linux-amd64.tar.gz"
 
 func TestCheckChannels(t *testing.T) {
 	fx := newFixture(t, func(fx *fixture) []fakeRelease {
@@ -252,7 +252,7 @@ func TestInstallWindowsBinary(t *testing.T) {
 	dir := t.TempDir()
 	exe := filepath.Join(dir, "AppMODBUS.exe")
 	os.WriteFile(exe, []byte("old"), 0o755)
-	pkg := filepath.Join(t.TempDir(), "AppMODBUS-windows-amd64.exe")
+	pkg := filepath.Join(t.TempDir(), "ModbusStudio-windows-amd64.exe")
 	os.WriteFile(pkg, []byte("new"), 0o644)
 	if _, err := Install("windows", pkg, exe); err != nil {
 		t.Fatal(err)
@@ -357,9 +357,29 @@ func TestLinuxFlavors(t *testing.T) {
 }
 
 func TestInstallDebUsesPkexec(t *testing.T) {
-	l, err := Install("linux", "/tmp/x/AppMODBUS-ubuntu-24.04-amd64.deb", DebInstallPath)
+	l, err := Install("linux", "/tmp/x/ModbusStudio-ubuntu-24.04-amd64.deb", DebInstallPath)
 	if err != nil || l.Path != "sh" || len(l.Args) != 4 || !strings.Contains(l.Args[1], "pkexec dpkg -i") ||
-		l.Args[2] != "/tmp/x/AppMODBUS-ubuntu-24.04-amd64.deb" || l.Args[3] != DebInstallPath {
+		l.Args[2] != "/tmp/x/ModbusStudio-ubuntu-24.04-amd64.deb" || l.Args[3] != DebInstallPath {
 		t.Fatalf("%+v %v", l, err)
+	}
+}
+
+// Releases carry the package under the old name too, for v1.0.x installs;
+// current builds must pick the ModbusStudio- name.
+func TestPrefersCurrentAssetName(t *testing.T) {
+	fx := newFixture(t, func(fx *fixture) []fakeRelease {
+		files := fx.signedFiles(linuxPkg, []byte("tgz"))
+		files[LegacyAssetPrefix+"linux-amd64.tar.gz"] = files[linuxPkg]
+		return []fakeRelease{{tag: "v1.1.0", files: files}}
+	})
+	rel, err := fx.updater("1.0.0").Check(context.Background(), Stable)
+	if err != nil || rel == nil || rel.Asset.Name != linuxPkg {
+		t.Fatalf("check %+v %v", rel, err)
+	}
+	for _, goos := range []string{"windows", "darwin", "linux"} {
+		pkg, inst, err := PackageName(goos, "amd64", LinuxPortable)
+		if err != nil || !strings.HasPrefix(pkg, AssetPrefix) || (inst != "" && !strings.HasPrefix(inst, AssetPrefix)) {
+			t.Errorf("%s: %q %q %v", goos, pkg, inst, err)
+		}
 	}
 }

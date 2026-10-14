@@ -81,10 +81,18 @@ const (
 	LinuxDeb
 )
 
+// AssetPrefix starts every release package name. Releases also carry copies
+// named with LegacyAssetPrefix, the name used up to v1.0.x, so installs of
+// those versions (which look only for the old names) can still update.
+const (
+	AssetPrefix       = "ModbusStudio-"
+	LegacyAssetPrefix = "AppMODBUS-"
+)
+
 // Linux .deb asset names.
 const (
-	DebLegacyAsset = "AppMODBUS-ubuntu-18.04-to-22.04-amd64.deb"
-	DebAsset       = "AppMODBUS-ubuntu-24.04-amd64.deb"
+	DebLegacyAsset = AssetPrefix + "ubuntu-18.04-to-22.04-amd64.deb"
+	DebAsset       = AssetPrefix + "ubuntu-24.04-amd64.deb"
 )
 
 // DebInstallPath is where the .deb puts the executable.
@@ -128,10 +136,10 @@ func PackageName(goos, arch string, linux LinuxFlavor) (pkg, installer string, e
 	switch goos {
 	case "windows":
 		if arch == "amd64" {
-			return "AppMODBUS-windows-amd64.exe", "AppMODBUS-windows-amd64-installer.exe", nil
+			return AssetPrefix + "windows-amd64.exe", AssetPrefix + "windows-amd64-installer.exe", nil
 		}
 	case "darwin":
-		return "AppMODBUS-macos-universal.zip", "", nil
+		return AssetPrefix + "macos-universal.zip", "", nil
 	case "linux":
 		if arch == "amd64" {
 			switch linux {
@@ -140,7 +148,7 @@ func PackageName(goos, arch string, linux LinuxFlavor) (pkg, installer string, e
 			case LinuxDebLegacy:
 				return DebLegacyAsset, "", nil
 			}
-			return "AppMODBUS-linux-amd64.tar.gz", "", nil
+			return AssetPrefix + "linux-amd64.tar.gz", "", nil
 		}
 	}
 	return "", "", fmt.Errorf("no update package is published for %s/%s", goos, arch)

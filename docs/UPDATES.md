@@ -20,10 +20,10 @@ Modbus Studio updates itself from the GitHub Releases of `elmnaveen/AppMODBUS`.
 
 | Platform | Package | Install method |
 | --- | --- | --- |
-| Windows | `AppMODBUS-windows-amd64.exe` | Renames the running exe aside and puts the new one in place. If the folder isn't writable (e.g. `Program Files`), it runs the signed NSIS installer `AppMODBUS-windows-amd64-installer.exe`, which asks for admin rights. |
-| macOS | `AppMODBUS-macos-universal.zip` | Swaps the whole `AppMODBUS.app` bundle, then runs `open -n`. |
-| Linux (portable) | `AppMODBUS-linux-amd64.tar.gz` | Swaps the binary. |
-| Ubuntu `.deb` | `AppMODBUS-ubuntu-18.04-to-22.04-amd64.deb` or `AppMODBUS-ubuntu-24.04-amd64.deb`, matching the installed one | Runs `pkexec dpkg -i` (desktop password prompt), then restarts the app. |
+| Windows | `ModbusStudio-windows-amd64.exe` | Renames the running exe aside and puts the new one in place. If the folder isn't writable (e.g. `Program Files`), it runs the signed NSIS installer `ModbusStudio-windows-amd64-installer.exe`, which asks for admin rights. |
+| macOS | `ModbusStudio-macos-universal.zip` | Swaps the whole `AppMODBUS.app` bundle, then runs `open -n`. |
+| Linux (portable) | `ModbusStudio-linux-amd64.tar.gz` | Swaps the binary. |
+| Ubuntu `.deb` | `ModbusStudio-ubuntu-18.04-to-22.04-amd64.deb` or `ModbusStudio-ubuntu-24.04-amd64.deb`, matching the installed one | Runs `pkexec dpkg -i` (desktop password prompt), then restarts the app. |
 
 The old version is deleted on the next start.
 
@@ -92,12 +92,19 @@ API, for example a local test server. Signature verification still applies.
 
 ## Product name vs. file names
 
-The app was renamed from AppMODBUS to **Modbus Studio**. Only the name users see changed. These keep the
-original `AppMODBUS` / `appmodbus` identifiers on purpose, because installed copies depend on them:
+The app was renamed from AppMODBUS to **Modbus Studio**, and release packages are named `ModbusStudio-…`
+(for example `ModbusStudio-windows-amd64-installer.exe`). Builds from the rename on look for these names.
 
-- Release asset names (`AppMODBUS-windows-amd64.exe`, …): older versions look for exactly these names when updating.
-- The executable (`AppMODBUS.exe`, `AppMODBUS.app`), the Windows install folder and uninstall entry, and the
-  Debian package (`appmodbus`, `/opt/AppMODBUS`): upgrades replace the existing install instead of adding a second one.
+Installs of v1.0.x and older look only for `AppMODBUS-…`. So the release job also attaches an identical copy of
+each package under its old name, and lists both names in the signed `checksums.txt`. Those installs update to the
+new version once, and look for the new names from then on. Once no v1.0.x installs are left, drop the copy step
+in the release job (`.github/workflows/build.yml`, "Checksums and signature").
+
+These keep the original `AppMODBUS` / `appmodbus` identifiers on purpose, because installed copies depend on them:
+
+- The executable and bundle inside the packages (`AppMODBUS.exe`, `AppMODBUS.app`), the Windows install folder and
+  uninstall entry, and the Debian package (`appmodbus`, `/opt/AppMODBUS`): upgrades replace the existing install
+  instead of adding a second one.
 - The settings and recordings folders (`AppMODBUS`), the WebView data folder and the `appmodbus.*` UI preference
   keys: users keep their settings, recent files and recordings.
 - The `appmodbus-workspace` / `appmodbus-profile` file format IDs: existing `.mbw` workspaces and profiles still open.
