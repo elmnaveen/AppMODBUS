@@ -108,7 +108,7 @@ func (s *Server) Start(cfg Config) error {
 	s.lastErr.Store("")
 	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
 	switch cfg.Mode {
-	case modbus.ModeTCP, modbus.ModeRTUOverTCP:
+	case modbus.ModeTCP, modbus.ModeRTUOverTCP, modbus.ModeASCIITCP:
 		ln, err := net.Listen("tcp", addr)
 		if err != nil {
 			return err
@@ -117,7 +117,7 @@ func (s *Server) Start(cfg Config) error {
 		s.addr = ln.Addr().String()
 		s.wg.Add(1)
 		go s.acceptLoop(ln, cfg)
-	case modbus.ModeRTUOverUDP:
+	case modbus.ModeRTUOverUDP, modbus.ModeUDP:
 		pc, err := net.ListenPacket("udp", addr)
 		if err != nil {
 			return err
@@ -126,7 +126,7 @@ func (s *Server) Start(cfg Config) error {
 		s.addr = pc.LocalAddr().String()
 		s.wg.Add(1)
 		go s.serveUDP(pc, cfg)
-	case modbus.ModeRTU:
+	case modbus.ModeRTU, modbus.ModeASCII:
 		mode := &serial.Mode{BaudRate: cfg.BaudRate, DataBits: cfg.DataBits, Parity: serial.NoParity, StopBits: serial.OneStopBit}
 		switch cfg.Parity {
 		case "E":
@@ -149,12 +149,17 @@ func (s *Server) Start(cfg Config) error {
 		s.wg.Add(1)
 		go func() {
 			defer s.wg.Done()
-			s.serveRTUStream(func(b []byte, t time.Duration) (int, error) {
+			read := func(b []byte, t time.Duration) (int, error) {
 				if err := p.SetReadTimeout(t); err != nil {
 					return 0, err
 				}
 				return p.Read(b)
-			}, p, cfg)
+			}
+			if cfg.Mode == modbus.ModeASCII {
+				s.serveASCIIStream(read, p, cfg)
+				return
+			}
+			s.serveRTUStream(read, p, cfg)
 		}()
 	default:
 		return fmt.Errorf("unknown mode %q", cfg.Mode)
@@ -343,7 +348,7 @@ func (s *Server) acceptLoop(ln net.Listener, cfg Config) {
 				s.serveMBAP(c, cfg)
 				return
 			}
-			s.serveRTUStream(func(b []byte, t time.Duration) (int, error) {
+			read := func(b []byte, t time.Duration) (int, error) {
 				_ = c.SetReadDeadline(time.Now().Add(t))
 				n, err := c.Read(b)
 				var ne net.Error
@@ -351,7 +356,12 @@ func (s *Server) acceptLoop(ln net.Listener, cfg Config) {
 					return n, nil
 				}
 				return n, err
-			}, c, cfg)
+			}
+			if cfg.Mode == modbus.ModeASCIITCP {
+				s.serveASCIIStream(read, c, cfg)
+				return
+			}
+			s.serveRTUStream(read, c, cfg)
 		}()
 	}
 }
@@ -449,6 +459,46 @@ func (s *Server) serveRTUStream(read func([]byte, time.Duration) (int, error), w
 	}
 }
 
+// serveASCIIStream reads ':'-delimited ASCII frames from a byte stream.
+// read must return (0, nil) when nothing arrives within the timeout.
+func (s *Server) serveASCIIStream(read func([]byte, time.Duration) (int, error), w io.Writer, cfg Config) {
+	frame := make([]byte, 0, 600)
+	buf := make([]byte, 256)
+	for !s.stopped() {
+		n, err := read(buf, 200*time.Millisecond)
+		if err != nil {
+			return
+		}
+		for _, c := range buf[:n] {
+			switch {
+			case c == ':':
+				frame = append(frame[:0], c)
+			case len(frame) == 0:
+			default:
+				frame = append(frame, c)
+				if len(frame) > 600 {
+					frame = frame[:0]
+					s.counters[cntCommErr].Add(1)
+					continue
+				}
+				if c != '\n' {
+					continue
+				}
+				s.traffic(modbus.Rx, frame)
+				unit, req, err := modbus.DecodeASCII(frame)
+				frame = frame[:0]
+				if err != nil {
+					s.counters[cntCommErr].Add(1)
+					continue
+				}
+				if resp, ok := s.handle(cfg, unit, req, false); ok {
+					s.reply(w, modbus.EncodeASCII(unit, resp))
+				}
+			}
+		}
+	}
+}
+
 func (s *Server) serveUDP(pc net.PacketConn, cfg Config) {
 	defer s.wg.Done()
 	buf := make([]byte, 512)
@@ -461,6 +511,10 @@ func (s *Server) serveUDP(pc net.PacketConn, cfg Config) {
 			return
 		}
 		s.traffic(modbus.Rx, buf[:n])
+		if cfg.Mode == modbus.ModeUDP {
+			s.serveMBAPDatagram(pc, from, buf[:n], cfg)
+			continue
+		}
 		unit, req, err := modbus.DecodeRTU(buf[:n])
 		if err != nil {
 			s.counters[cntCommErr].Add(1)
@@ -502,4 +556,23 @@ func (s *Server) animate() {
 			s.Store.Write(DiscreteInputs, 0, bits)
 		}
 	}
+}
+
+// serveMBAPDatagram answers one Modbus UDP request.
+func (s *Server) serveMBAPDatagram(pc net.PacketConn, from net.Addr, b []byte, cfg Config) {
+	if len(b) < modbus.MBAPHeaderLen+1 {
+		return
+	}
+	h, err := modbus.DecodeMBAPHeader(b[:modbus.MBAPHeaderLen])
+	if err != nil || modbus.MBAPHeaderLen+int(h.Length)-1 != len(b) {
+		return
+	}
+	req := modbus.PDU{Function: b[modbus.MBAPHeaderLen], Data: append([]byte(nil), b[modbus.MBAPHeaderLen+1:]...)}
+	resp, ok := s.handle(cfg, h.Unit, req, true)
+	if !ok {
+		resp = exception(req.Function, modbus.ExGatewayNoResponse)
+	}
+	adu := modbus.EncodeMBAP(h.TxID, h.Unit, resp)
+	s.traffic(modbus.Tx, adu)
+	_, _ = pc.WriteTo(adu, from)
 }

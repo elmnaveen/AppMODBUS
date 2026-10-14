@@ -39,3 +39,6 @@ export const IconCopy = () => <I><rect x="8" y="8" width="12" height="12" rx="2"
 export const IconDatabase = () => <I><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" /></I>
 export const IconChart = () => <I><path d="M4 4v16h16" /><path d="M7 15l4-5 3 3 5-6" /></I>
 export const IconPulse = () => <I><path d="M3 12h4l3-8 4 16 3-8h4" /></I>
+export const IconBell = () => <I><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0" /></I>
+export const IconCheck = () => <I><path d="M5 12l5 5L20 7" /></I>
+export const IconFlask = () => <I><path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3M7 15h10" /></I>

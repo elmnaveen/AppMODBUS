@@ -74,7 +74,8 @@ type PollConfig struct {
 	PLCAddressing bool                   `json:"plcAddressing"` // display 1-based
 	CellFormats   map[int]datafmt.Format `json:"cellFormats"`
 	Tags          map[int]Tag            `json:"tags"`
-	Record        bool                   `json:"record"` // store polled values on disk
+	Record        bool                   `json:"record"`    // store polled values on disk
+	CommAlarm     bool                   `json:"commAlarm"` // alarm after repeated read failures
 }
 
 // Tag names a register and converts its raw value to engineering units:
@@ -86,6 +87,8 @@ type Tag struct {
 	Unit     string  `json:"unit"`
 	Decimals int     `json:"decimals"` // -1 = automatic
 	Note     string  `json:"note,omitempty"`
+
+	Alarm *AlarmLimits `json:"alarm,omitempty"`
 }
 
 // Scales reports whether the tag changes the value.
@@ -100,7 +103,10 @@ func normalizeTag(t *Tag) error {
 	}
 	t.Name = strings.TrimSpace(t.Name)
 	t.Unit = strings.TrimSpace(t.Unit)
-	return nil
+	if t.Alarm != nil && !t.Alarm.Enabled && t.Alarm.HiHi == nil && t.Alarm.Hi == nil && t.Alarm.Lo == nil && t.Alarm.LoLo == nil && t.Alarm.OnState == nil {
+		t.Alarm = nil
+	}
+	return normalizeAlarm(t.Alarm)
 }
 
 // decimalsFor picks display decimals: explicit, or derived from the gain
@@ -152,6 +158,8 @@ type Cell struct {
 	// without data or with a non-finite value.
 	Num    float64 `json:"num"`
 	HasNum bool    `json:"hasNum"`
+
+	Alarm string `json:"alarm,omitempty"` // alarm level, "" = normal
 }
 
 // PollState is the live state of a poll window.
@@ -192,6 +200,9 @@ type poll struct {
 	done chan struct{}
 
 	stats *statsAcc
+
+	levels     map[int]string // alarm level per address (-1 = comm)
+	failStreak int
 }
 
 // Engine is the application core.
@@ -204,6 +215,11 @@ type Engine struct {
 	nextID  int
 	traffic *trafficLog
 	scan    scanner
+	alarms  alarmTable
+	seq     sequencer
+
+	// OnAlarm, when set, receives every alarm history event.
+	OnAlarm func(AlarmEvent)
 
 	Sim *simulator.Server
 
@@ -268,7 +284,7 @@ func (e *Engine) newID(prefix string) string {
 
 func normalizeConn(c *ConnectionConfig) error {
 	switch c.Mode {
-	case modbus.ModeRTU:
+	case modbus.ModeRTU, modbus.ModeASCII:
 		if c.SerialPort == "" {
 			return errors.New("select a serial port")
 		}
@@ -284,7 +300,7 @@ func normalizeConn(c *ConnectionConfig) error {
 		if c.StopBits != 2 {
 			c.StopBits = 1
 		}
-	case modbus.ModeTCP, modbus.ModeRTUOverTCP, modbus.ModeRTUOverUDP:
+	case modbus.ModeTCP, modbus.ModeRTUOverTCP, modbus.ModeRTUOverUDP, modbus.ModeASCIITCP, modbus.ModeUDP:
 		c.Host = strings.TrimSpace(c.Host)
 		if c.Host == "" {
 			return errors.New("enter an IP address or host name")
@@ -550,6 +566,7 @@ func (e *Engine) DeletePoll(id string) {
 		return
 	}
 	e.stopPoll(p)
+	e.dropAlarms(id)
 	e.mu.Lock()
 	delete(e.polls, id)
 	for i, o := range e.order {
@@ -734,8 +751,10 @@ func (e *Engine) pollOnce(p *poll) error {
 		p.regs, p.bits = regs, bits
 		p.rebuildCells()
 	}
+	trans := p.evaluateAlarms(err, true)
 	cells := p.st.Cells
 	p.mu.Unlock()
+	e.alarmsChanged(e.applyTransitions(trans))
 	if err == nil && cfg.Record && e.OnSample != nil {
 		e.OnSample(cfg, c.cfg.modbusConfig().Describe(), cells, start)
 	}
@@ -822,6 +841,7 @@ func (p *poll) rebuildCells() {
 			cells[i] = c
 		}
 		p.st.Cells = cells
+		p.applyLevels()
 		return
 	}
 	for i := 0; i < cfg.Quantity; {
@@ -868,6 +888,7 @@ func (p *poll) rebuildCells() {
 		i += span
 	}
 	p.st.Cells = cells
+	p.applyLevels()
 }
 
 func b2i(b bool) int {

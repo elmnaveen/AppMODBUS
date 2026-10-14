@@ -39,6 +39,7 @@ type LoadResult struct {
 	State        WorkspaceState   `json:"state"`
 	Layout       workspace.Layout `json:"layout"`
 	Charts       any              `json:"charts"`
+	Sequences    any              `json:"sequences"`
 	Warnings     []string         `json:"warnings"`
 	MissingPorts []MissingPort    `json:"missingPorts"`
 	Ports        []string         `json:"ports"` // serial ports available now
@@ -50,6 +51,7 @@ type workspaceManager struct {
 	dirty    bool
 	layout   workspace.Layout
 	charts   []byte
+	seqs     []byte
 	sessTime *time.Timer
 }
 
@@ -88,6 +90,9 @@ func (a *App) snapshot() workspace.File {
 	f.Layout = a.ws.layout
 	if len(a.ws.charts) > 0 {
 		f.Charts = append([]byte(nil), a.ws.charts...)
+	}
+	if len(a.ws.seqs) > 0 {
+		f.Sequences = append([]byte(nil), a.ws.seqs...)
 	}
 	a.ws.mu.Unlock()
 	st := a.engine.Sim.Status()
@@ -146,12 +151,12 @@ func (a *App) apply(f workspace.File, path string, dirty bool) LoadResult {
 	}
 	var missing []MissingPort
 	for _, c := range f.Connections {
-		if c.Mode == modbus.ModeRTU && c.SerialPort != "" && !slices.Contains(ports, c.SerialPort) {
+		if c.Mode.IsSerial() && c.SerialPort != "" && !slices.Contains(ports, c.SerialPort) {
 			missing = append(missing, MissingPort{ConnectionID: c.ID, Name: c.Name, Port: c.SerialPort})
 		}
 	}
 	if s := f.Simulator; s != nil && s.Running {
-		if s.Config.Mode == modbus.ModeRTU && !slices.Contains(ports, s.Config.SerialPort) {
+		if s.Config.Mode.IsSerial() && !slices.Contains(ports, s.Config.SerialPort) {
 			missing = append(missing, MissingPort{Name: "Simulator", Port: s.Config.SerialPort})
 		} else if err := a.engine.Sim.Start(s.Config); err != nil {
 			warnings = append(warnings, "simulator: "+err.Error())
@@ -161,6 +166,7 @@ func (a *App) apply(f workspace.File, path string, dirty bool) LoadResult {
 	a.ws.mu.Lock()
 	a.ws.path, a.ws.dirty, a.ws.layout = path, dirty, f.Layout
 	a.ws.charts = append([]byte(nil), f.Charts...)
+	a.ws.seqs = append([]byte(nil), f.Sequences...)
 	a.ws.mu.Unlock()
 	a.emitWorkspace()
 
@@ -168,13 +174,17 @@ func (a *App) apply(f workspace.File, path string, dirty bool) LoadResult {
 	if len(f.Charts) > 0 {
 		charts = f.Charts
 	}
+	var seqs any = []any{}
+	if len(f.Sequences) > 0 {
+		seqs = f.Sequences
+	}
 	if warnings == nil {
 		warnings = []string{}
 	}
 	if missing == nil {
 		missing = []MissingPort{}
 	}
-	return LoadResult{State: a.workspaceState(), Layout: f.Layout, Charts: charts, Warnings: warnings, MissingPorts: missing, Ports: ports}
+	return LoadResult{State: a.workspaceState(), Layout: f.Layout, Charts: charts, Sequences: seqs, Warnings: warnings, MissingPorts: missing, Ports: ports}
 }
 
 // RestoreSession reopens the last session (polls stopped). Called by the
@@ -287,6 +297,22 @@ func (a *App) SetCharts(charts any) error {
 	a.ws.mu.Lock()
 	same := string(a.ws.charts) == string(b)
 	a.ws.charts = b
+	a.ws.mu.Unlock()
+	if !same {
+		a.markDirty()
+	}
+	return nil
+}
+
+// SetSequences stores the test sequences (owned by the UI).
+func (a *App) SetSequences(seqs any) error {
+	b, err := jsonMarshal(seqs)
+	if err != nil {
+		return err
+	}
+	a.ws.mu.Lock()
+	same := string(a.ws.seqs) == string(b)
+	a.ws.seqs = b
 	a.ws.mu.Unlock()
 	if !same {
 		a.markDirty()

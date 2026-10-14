@@ -1,4 +1,7 @@
-export type Mode = 'rtu' | 'tcp' | 'rtu-tcp' | 'rtu-udp'
+export type Mode = 'rtu' | 'ascii' | 'tcp' | 'udp' | 'rtu-tcp' | 'ascii-tcp' | 'rtu-udp'
+
+export const isSerialMode = (m: Mode) => m === 'rtu' || m === 'ascii'
+export const isUDPMode = (m: Mode) => m === 'udp' || m === 'rtu-udp'
 
 export interface ConnectionConfig {
   id: string
@@ -35,6 +38,7 @@ export interface PollConfig {
   cellFormats: Record<string, string>
   tags: Record<string, Tag>
   record: boolean
+  commAlarm?: boolean
 }
 
 /** Register name and scaling: shown = raw × gain + offset. */
@@ -45,6 +49,56 @@ export interface Tag {
   unit: string
   decimals: number // -1 = automatic
   note?: string
+  alarm?: AlarmLimits | null
+}
+
+/** Alarm limits of a tag; null limits are off. */
+export interface AlarmLimits {
+  enabled: boolean
+  hiHi: number | null
+  hi: number | null
+  lo: number | null
+  loLo: number | null
+  deadband: number
+  onState: number | null // bits: alarm while the bit equals this
+}
+
+export type AlarmLevel = 'hihi' | 'hi' | 'lo' | 'lolo' | 'state' | 'comm'
+
+export const ALARM_LEVEL_LABELS: Record<AlarmLevel, string> = {
+  hihi: 'High-high', hi: 'High', lo: 'Low', lolo: 'Low-low', state: 'State', comm: 'Communication',
+}
+
+export interface Alarm {
+  id: string
+  pollId: string
+  address: number
+  window: string
+  name: string
+  unit: string
+  level: AlarmLevel
+  severity: 'critical' | 'warning'
+  value: number
+  limit: number
+  message: string
+  active: boolean
+  acked: boolean
+  since: number
+  clearedAt: number
+  ackedAt: number
+}
+
+export interface AlarmEvent {
+  t: number
+  kind: 'active' | 'level' | 'cleared' | 'ack'
+  id: string
+  window: string
+  name: string
+  level: AlarmLevel
+  value: number
+  limit: number
+  unit: string
+  message: string
 }
 
 export interface Cell {
@@ -58,6 +112,7 @@ export interface Cell {
   rawText?: string
   num: number
   hasNum: boolean
+  alarm?: AlarmLevel
 }
 
 export interface PollState {
@@ -128,15 +183,26 @@ export type SimTable = 'coils' | 'discrete' | 'holding' | 'input'
 
 export const MODE_LABELS: Record<Mode, string> = {
   rtu: 'Modbus RTU (serial)',
+  ascii: 'Modbus ASCII (serial)',
   tcp: 'Modbus TCP/IP',
+  udp: 'Modbus UDP/IP',
   'rtu-tcp': 'RTU over TCP',
+  'ascii-tcp': 'ASCII over TCP',
   'rtu-udp': 'RTU over UDP',
 }
 
+export const MODE_GROUPS: { label: string; modes: Mode[] }[] = [
+  { label: 'Serial port', modes: ['rtu', 'ascii'] },
+  { label: 'Network', modes: ['tcp', 'udp', 'rtu-tcp', 'ascii-tcp', 'rtu-udp'] },
+]
+
 export const MODE_SHORT: Record<Mode, string> = {
   rtu: 'RTU (serial)',
+  ascii: 'ASCII (serial)',
   tcp: 'TCP/IP',
+  udp: 'UDP/IP',
   'rtu-tcp': 'RTU over TCP',
+  'ascii-tcp': 'ASCII over TCP',
   'rtu-udp': 'RTU over UDP',
 }
 
@@ -228,6 +294,7 @@ export interface LoadResult {
   state: WorkspaceState
   layout: Layout
   charts: unknown
+  sequences: unknown
   warnings: string[]
   missingPorts: MissingPort[]
   ports: string[]
@@ -403,3 +470,70 @@ export interface EchoResult { sent: number; ok: number; minMs: number; avgMs: nu
 export interface CounterValue { sub: number; name: string; value: number; error: string }
 export interface DeviceObject { id: number; name: string; value: string }
 export interface DeviceID { conformity: number; objects: DeviceObject[] }
+
+// ---- test sequences ----
+
+export type StepKind = 'read' | 'write' | 'wait' | 'prompt'
+export type CheckOp = '' | 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge' | 'range'
+
+export interface SeqStep {
+  kind: StepKind
+  label: string
+  slaveId: number // 0 = the sequence's slave
+  function: number
+  address: number
+  format: string
+  gain: number
+  offset: number
+  check: CheckOp
+  value: number
+  min: number
+  max: number
+  tolerance: number
+  values: string
+  waitMs: number
+  text: string
+}
+
+export interface Sequence {
+  id: string
+  name: string
+  connectionId: string
+  slaveId: number
+  repeat: number
+  stopOnFail: boolean
+  stepDelayMs: number
+  steps: SeqStep[]
+}
+
+export interface StepResult {
+  run: number
+  index: number
+  label: string
+  status: 'pass' | 'fail' | 'error' | 'done' | 'skipped'
+  value: string
+  expect: string
+  message: string
+  ms: number
+  time: number
+}
+
+export interface SequenceRun {
+  sequenceId: string
+  name: string
+  connection: string
+  running: boolean
+  prompt: string
+  run: number
+  runs: number
+  step: number
+  started: number
+  finished: number
+  verdict: '' | 'pass' | 'fail' | 'stopped' | 'error'
+  error: string
+  passed: number
+  failed: number
+  errors: number
+  results: StepResult[]
+  seq: number
+}

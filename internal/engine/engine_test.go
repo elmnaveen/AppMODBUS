@@ -24,7 +24,7 @@ func startSim(t *testing.T, e *Engine, mode modbus.Mode) int {
 }
 
 func TestEndToEndAllNetworkModes(t *testing.T) {
-	for _, mode := range []modbus.Mode{modbus.ModeTCP, modbus.ModeRTUOverTCP, modbus.ModeRTUOverUDP} {
+	for _, mode := range []modbus.Mode{modbus.ModeTCP, modbus.ModeRTUOverTCP, modbus.ModeRTUOverUDP, modbus.ModeASCIITCP, modbus.ModeUDP} {
 		t.Run(string(mode), func(t *testing.T) {
 			e := New(nil)
 			defer e.Shutdown()

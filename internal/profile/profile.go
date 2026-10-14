@@ -32,6 +32,8 @@ type Register struct {
 	Unit     string         `json:"unit"`
 	Decimals int            `json:"decimals"` // -1 = automatic
 	Note     string         `json:"note,omitempty"`
+
+	Alarm *engine.AlarmLimits `json:"alarm,omitempty"`
 }
 
 // UnmarshalJSON applies defaults for fields missing from hand-written files.
@@ -187,7 +189,7 @@ func ToPolls(p Profile, connectionID string, slaveID, scanRateMs int) ([]engine.
 			if !modbus.IsBitFunction(byte(r.Function)) && r.Format != cfg.Format {
 				cfg.CellFormats[r.Address] = r.Format
 			}
-			cfg.Tags[r.Address] = engine.Tag{Name: r.Name, Gain: r.Gain, Offset: r.Offset, Unit: r.Unit, Decimals: r.Decimals, Note: r.Note}
+			cfg.Tags[r.Address] = engine.Tag{Name: r.Name, Gain: r.Gain, Offset: r.Offset, Unit: r.Unit, Decimals: r.Decimals, Note: r.Note, Alarm: r.Alarm}
 		}
 		out = append(out, cfg)
 		group = nil
@@ -242,7 +244,7 @@ func FromPoll(poll engine.PollConfig, name string) Profile {
 			r.Format = "bit"
 		}
 		if t, ok := poll.Tags[a]; ok {
-			r.Name, r.Gain, r.Offset, r.Unit, r.Decimals, r.Note = t.Name, t.Gain, t.Offset, t.Unit, t.Decimals, t.Note
+			r.Name, r.Gain, r.Offset, r.Unit, r.Decimals, r.Note, r.Alarm = t.Name, t.Gain, t.Offset, t.Unit, t.Decimals, t.Note, t.Alarm
 		}
 		span := 1
 		if !bits {

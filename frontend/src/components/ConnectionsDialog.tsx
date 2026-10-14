@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, errText } from '../api'
-import { MODE_LABELS, MODE_SHORT, type ConnectionConfig, type ConnectionInfo, type Mode } from '../types'
+import { isSerialMode, isUDPMode, MODE_GROUPS, MODE_LABELS, type ConnectionConfig, type ConnectionInfo, type Mode } from '../types'
 import { IconPlus, IconRefresh, IconTrash } from './Icons'
 import { Modal } from './Modal'
 
@@ -34,7 +34,7 @@ export function ConnectionsDialog({ connections, initialId, onClose }: Props) {
     setError('')
   }
   const set = <K extends keyof ConnectionConfig>(k: K, v: ConnectionConfig[K]) => setForm((f) => ({ ...f, [k]: v }))
-  const isSerial = form.mode === 'rtu'
+  const isSerial = isSerialMode(form.mode)
 
   const save = async (connect: boolean) => {
     setBusy(true)
@@ -96,13 +96,20 @@ export function ConnectionsDialog({ connections, initialId, onClose }: Props) {
 
         <div className="form">
           <label className="lbl">Connection type</label>
-          <div className="seg">
-            {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
-              <button key={m} className={form.mode === m ? 'on' : ''} onClick={() => setForm((f) => ({ ...f, mode: m, port: f.port || 502 }))}>
-                {MODE_SHORT[m]}
-              </button>
+          <select
+            value={form.mode}
+            onChange={(e) => {
+              const m = e.target.value as Mode
+              // Modbus ASCII is usually 7 data bits, even parity.
+              setForm((f) => ({ ...f, mode: m, port: f.port || 502, ...(m === 'ascii' && f.mode !== 'ascii' ? { dataBits: 7, parity: 'E' as const } : {}) }))
+            }}
+          >
+            {MODE_GROUPS.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.modes.map((m) => <option key={m} value={m}>{MODE_LABELS[m]}</option>)}
+              </optgroup>
             ))}
-          </div>
+          </select>
           <label className="lbl">Name</label>
           <input type="text" value={form.name} placeholder="(automatic)" onChange={(e) => set('name', e.target.value)} />
 
@@ -136,7 +143,7 @@ export function ConnectionsDialog({ connections, initialId, onClose }: Props) {
             <>
               <label className="lbl">IP address / host</label>
               <input type="text" value={form.host} onChange={(e) => set('host', e.target.value)} />
-              <label className="lbl">{form.mode === 'rtu-udp' ? 'UDP port' : 'TCP port'}</label>
+              <label className="lbl">{isUDPMode(form.mode) ? 'UDP port' : 'TCP port'}</label>
               <input type="number" min={1} max={65535} value={form.port} onChange={(e) => set('port', Number(e.target.value))} />
             </>
           )}

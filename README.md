@@ -10,21 +10,23 @@ with a **React + TypeScript** UI.
 
 | Area | Details |
 | --- | --- |
-| Connections | Modbus RTU (serial), Modbus TCP/IP, RTU over TCP, RTU over UDP |
-| Serial settings | Any port, 1200–921600 baud, 7/8 data bits, N/E/O parity, 1/2 stop bits; t3.5 inter-frame timing |
+| Connections | Modbus RTU and Modbus ASCII (serial), Modbus TCP/IP, Modbus UDP/IP, RTU over TCP, ASCII over TCP, RTU over UDP |
+| Serial settings | Any port, 1200–921600 baud, 7/8 data bits, N/E/O parity, 1/2 stop bits; t3.5 inter-frame timing for RTU, ':' … CR LF framing with LRC for ASCII |
 | Poll windows | Any number of windows, each with its own slave ID, function, address, quantity and scan rate, shown as tabs or tiled side by side |
 | Read functions | 01 Read Coils, 02 Read Discrete Inputs, 03 Read Holding Registers, 04 Read Input Registers |
 | Write functions | 05, 06, 15, 16: double-click a cell, or use the **Write** dialog |
-| Other functions | 08 Diagnostics, 43/14 Read Device Identification |
+| Other functions | 23 Read/Write Multiple Registers (Write dialog), 08 Diagnostics, 43/14 Read Device Identification |
 | Data formats | Signed, Unsigned, Hex, Binary; 32-bit Long / Unsigned Long / Float and 64-bit Long64 / Double, each in all four byte orders (AB CD, CD AB, BA DC, DC BA); set per window or per cell (right-click) |
 | Addressing | Protocol (base 0) or PLC (base 1) per window |
 | Diagnostics | Tx / Err counters, timeout, CRC and exception reporting, response time. **Diagnostics** window: per-connection and per-window statistics (timeouts, CRC errors, exceptions by code, min/avg/p95/max response time), response-time histogram and chart |
 | Scanning | Slave ID scan (1–247) on any connection; register map probe (which addresses of functions 01–04 a slave answers, then open them as poll windows); Modbus TCP network scan of an IP range with unit IDs and device identification |
 | Device tools | Function 43/14 Read Device Identification (basic, regular, extended); function 08 echo test and serial-line counters (read / clear) |
-| Traffic log | Live Tx/Rx frames in hex with timestamps; pause, filter, clear, save to file |
-| Simulator | Built-in Modbus slave (TCP, RTU over TCP/UDP, serial RTU) with an editable data table, optional live demo values, optional valid-address ranges per table, function 08 counters and 43/14 identification |
+| Traffic log | Live Tx/Rx frames in hex (ASCII frames as text) with timestamps; pause, filter, clear, save to file |
+| Simulator | Built-in Modbus slave (every connection type above) with an editable data table, optional live demo values, optional valid-address ranges per table, function 08 counters and 43/14 identification |
 | Workspaces | Save/open `.mbw` files (connections, windows, formats, layout, simulator data); recent list; session autosave and restore on start-up with polling stopped; prompts to remap missing serial ports |
 | Tags & profiles | Name, gain/offset scaling and units per register; device profiles (bundled, personal and shared-folder) applied to any slave ID; import register maps from CSV/Excel with Modicon address detection |
+| Alarms | High-high / high / low / low-low limits with deadband per tag (in engineering units), bit state alarms, and a communication alarm after 3 failed reads. Alarm cells are coloured and marked; the alarm list shows severity, value, limit and live value, with acknowledge (single or all) and an optional sound. History is logged per day and can be exported to CSV; limits travel with workspaces and device profiles |
+| Test sequences | **Tests** window: step lists of reads with checks (between, =, ≠, <, ≤, >, ≥ with tolerance and scaling), writes, waits and operator prompts; repeat, stop at first failure, pause between steps; per-step pass/fail with values, a PASS/FAIL verdict and a CSV report. Sequences are saved in the workspace |
 | Recording | **REC** per poll window stores values (in engineering units) on disk; Data management: retention (default 30 days), size cap (default 2 GB, oldest first), storage folder, export to CSV/Excel, delete by series or date range |
 | Charts | Chart tabs that combine up to 8 registers from any poll windows, plus an inline chart under each poll window. Left and right Y axes (one per unit), step lanes for coils and discrete inputs, min/max/avg/last per line, crosshair tooltip, drag to zoom, PNG and CSV export. Ranges from 1 minute to 30 days; 1 hour and longer also draw recorded history |
 | Themes | Light and dark |
@@ -34,6 +36,10 @@ Several poll windows can share one connection. Requests are queued per connectio
 never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time to turn around.
 
 ![Chart tab with two Y axes](docs/screenshots/chart.png)
+
+![Alarms](docs/screenshots/alarms.png)
+
+![Test sequence](docs/screenshots/test-sequence.png)
 
 <p>
   <img src="docs/screenshots/chart-inline.png" width="49%" alt="Inline chart under a poll window">
@@ -126,7 +132,6 @@ frontend/src             React UI (poll windows, dialogs, traffic log, simulator
 frontend/src/charts      Charts: live buffer, history merge, uPlot rendering
 ```
 
-## Planned next (v2 ideas)
+## Ideas for later
 
-Modbus ASCII,
-Modbus UDP (MBAP) and function 23 (read/write multiple registers).
+Bundled Elmeasure meter profiles, scripting beyond step lists, and OPC UA / MQTT forwarding.

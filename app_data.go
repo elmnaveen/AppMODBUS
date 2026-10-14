@@ -72,6 +72,9 @@ func (a *App) enforceLimits() {
 		return
 	}
 	s := a.prefs().Get()
+	if a.alarmLog != nil {
+		a.alarmLog.Prune(s.RetentionDays)
+	}
 	if _, err := a.rec.Enforce(s.RetentionDays, int64(s.MaxStorageMB)<<20, time.Now()); err != nil {
 		a.setRecErr(err)
 	}

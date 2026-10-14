@@ -11,6 +11,13 @@ const ts = (ms: number) => {
   return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}.${p(d.getMilliseconds(), 3)}`
 }
 
+// Modbus ASCII frames (':' ... CR LF) read better as text.
+const frameText = (hex: string) => {
+  const b = hex.split(' ')
+  if (b[0] !== '3A' || b.length < 3 || b[b.length - 2] !== '0D' || b[b.length - 1] !== '0A') return hex
+  return String.fromCharCode(...b.slice(0, -2).map((x) => parseInt(x, 16))) + ' CR LF'
+}
+
 interface Props {
   visible: boolean
   onClose: () => void
@@ -44,7 +51,7 @@ export function TrafficPanel({ visible, onClose, onError }: Props) {
     setPaused(!paused)
   }
   const save = async () => {
-    const text = shown.map((r) => `${ts(r.time)}  ${r.source.padEnd(24)} ${r.dir}  ${r.hex}`).join('\n') + '\n'
+    const text = shown.map((r) => `${ts(r.time)}  ${r.source.padEnd(24)} ${r.dir}  ${frameText(r.hex)}`).join('\n') + '\n'
     try {
       await api.saveTrafficLog(text)
     } catch (e) {
@@ -78,7 +85,7 @@ export function TrafficPanel({ visible, onClose, onError }: Props) {
             <span className="s">{r.source}</span>
             <span className={`d ${r.dir}`}>{r.dir}</span>
             <span className="n">{r.len}B</span>
-            <span>{r.hex}</span>
+            <span>{frameText(r.hex)}</span>
           </div>
         ))}
       </div>

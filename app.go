@@ -29,6 +29,8 @@ type App struct {
 
 	rec    *recorder.Recorder
 	recErr atomic.Value // string
+
+	alarmLog *engine.AlarmLog
 }
 
 // NewApp creates the application.
@@ -39,6 +41,7 @@ func (a *App) startup(ctx context.Context) {
 	a.engine = engine.New(func(event string, data any) { runtime.EventsEmit(ctx, event, data) })
 	a.engine.OnChange = a.markDirty
 	a.startRecorder()
+	a.startAlarmLog()
 	a.startUpdater()
 }
 
@@ -96,6 +99,9 @@ func (a *App) SetCellFormat(id string, address int, format string) error {
 // ---- writes ----
 
 func (a *App) Write(w engine.WriteRequest) error { return a.engine.Write(w) }
+
+// ReadWrite performs function 23 and returns the registers read.
+func (a *App) ReadWrite(r engine.ReadWriteRequest) ([]int, error) { return a.engine.ReadWrite(r) }
 
 func (a *App) WriteCell(pollID string, address int, value string, forceMultiple bool) error {
 	return a.engine.WriteCell(pollID, address, value, forceMultiple)

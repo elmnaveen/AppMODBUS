@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, errText, events } from './api'
 import { ConnectionsDialog, blankConnection } from './components/ConnectionsDialog'
 import {
-  IconBolt, IconBook, IconChart, IconPulse, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
+  IconBell, IconBolt, IconBook, IconChart, IconFlask, IconPulse, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
 } from './components/Icons'
 import { PollDialog } from './components/PollDialog'
 import { PollWindow } from './components/PollWindow'
@@ -11,6 +11,8 @@ import { TrafficPanel } from './components/TrafficPanel'
 import { AboutDialog, UpdateBanner, useUpdates } from './components/Updates'
 import { DataDialog } from './components/DataDialog'
 import { DiagnosticsDialog } from './components/Diagnostics'
+import { AlarmsPanel, beep, loadAlarmSound } from './components/AlarmsPanel'
+import { TestsDialog, parseSequences } from './components/Tests'
 import { ProfilesDialog } from './components/Profiles'
 import { TagDialog } from './components/TagDialog'
 import { FileMenu, PortRemapDialog, UnsavedDialog } from './components/Workspace'
@@ -22,7 +24,7 @@ import {
   addSeries, emptyCharts, MAX_SERIES, newChartId, parseCharts, pruneCharts,
   type ChartDef, type ChartSeries, type ChartsDoc, type InlineChart,
 } from './charts/model'
-import { fc2, type AppInfo, type Cell, type LoadResult, type WorkspaceState, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
+import { fc2, type Alarm, type AppInfo, type Sequence, type Cell, type LoadResult, type WorkspaceState, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
 
 type Dialog =
   | { kind: 'connections'; id?: string }
@@ -35,6 +37,7 @@ type Dialog =
   | { kind: 'data' }
   | { kind: 'addSeries'; chartId: string }
   | { kind: 'diag' }
+  | { kind: 'tests' }
   | null
 
 export default function App() {
@@ -56,8 +59,14 @@ export default function App() {
   const [restored, setRestored] = useState(false)
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
   const [remap, setRemap] = useState<LoadResult | null>(null)
+  const [alarms, setAlarms] = useState<Alarm[]>([])
+  const [showAlarms, setShowAlarms] = useState(false)
+  const [alarmSound, setAlarmSound] = useState(loadAlarmSound)
+  const seenAlarms = useRef(new Set<string>())
   const [charts, setCharts] = useState<ChartsDoc>(emptyCharts)
   const sentCharts = useRef(JSON.stringify(emptyCharts()))
+  const [sequences, setSequences] = useState<Sequence[]>([])
+  const sentSeqs = useRef('[]')
 
   const notify = useCallback((msg: string, error = true) => {
     setToast({ msg, error })
@@ -68,12 +77,22 @@ export default function App() {
     api.appInfo().then(setInfo)
     api.formats().then(setFormats)
     api.restoreSession().then(applyLoad).finally(() => setRestored(true))
+    api.alarms().then(setAlarms)
     const offs = [
       events.onPoll((p) => {
         live.ingest(p)
         setPolls((cur) => ({ ...cur, [p.config.id]: p }))
       }),
       events.onConnections(setConnections),
+      // An operator step needs an answer: bring the test window back.
+      events.onSequence((r) => { if (r.prompt) setDialog((d) => (d?.kind === 'tests' ? d : { kind: 'tests' })) }),
+      events.onAlarms((list) => {
+        setAlarms(list)
+        // Open the panel when a new alarm is raised (not on every update).
+        const fresh = list.some((a) => a.active && !a.acked && !seenAlarms.current.has(`${a.id}@${a.since}`))
+        list.forEach((a) => seenAlarms.current.add(`${a.id}@${a.since}`))
+        if (fresh) setShowAlarms(true)
+      }),
       events.onWorkspace(setWs),
     ]
     return () => offs.forEach((off) => off())
@@ -93,6 +112,9 @@ export default function App() {
     const doc = pruneCharts(parseCharts(r.charts), new Set(ps.map((p) => p.config.id)))
     sentCharts.current = JSON.stringify(doc)
     setCharts(doc)
+    const seqs = parseSequences(r.sequences)
+    sentSeqs.current = JSON.stringify(seqs)
+    setSequences(seqs)
     const ids = [...ps.map((p) => p.config.id), ...doc.tabs.map((t) => t.id)]
     setActive(ids.includes(r.layout.activeId) ? r.layout.activeId : ids[0] ?? '')
     if (r.warnings.length) notify(`Some items could not be loaded: ${r.warnings.join('; ')}`)
@@ -103,6 +125,24 @@ export default function App() {
   useEffect(() => {
     if (restored) api.setLayout({ view, activeId: active, showTraffic, showSimulator: showSim })
   }, [restored, view, active, showTraffic, showSim])
+
+  useEffect(() => {
+    const json = JSON.stringify(sequences)
+    if (restored && json !== sentSeqs.current) {
+      sentSeqs.current = json
+      api.setSequences(sequences)
+    }
+  }, [restored, sequences])
+
+  // Beep while alarms are unacknowledged.
+  const unacked = alarms.filter((a) => !a.acked)
+  const unackedCritical = unacked.some((a) => a.severity === 'critical')
+  useEffect(() => {
+    if (!alarmSound || unacked.length === 0) return
+    beep(unackedCritical)
+    const t = setInterval(() => beep(unackedCritical), 3000)
+    return () => clearInterval(t)
+  }, [alarmSound, unacked.length > 0, unackedCritical])
 
   // So are the charts.
   useEffect(() => {
@@ -303,10 +343,19 @@ export default function App() {
         <button className="btn" onClick={() => setDialog({ kind: 'profiles' })}><IconBook />Profiles</button>
         <button className="btn" onClick={() => setDialog({ kind: 'data' })}><IconDatabase />Data</button>
         <button className="btn" onClick={() => setDialog({ kind: 'diag' })}><IconPulse />Diagnostics</button>
+        <button className="btn" onClick={() => setDialog({ kind: 'tests' })}><IconFlask />Tests</button>
         <span className="tb-sep" />
         <button className={`btn icon${view === 'tabs' ? ' on' : ''}`} title="Tabbed view" onClick={() => setView('tabs')}><IconTabs /></button>
         <button className={`btn icon${view === 'tile' ? ' on' : ''}`} title="Tile all windows" onClick={() => setView('tile')}><IconTile /></button>
         <span className="tb-spacer" />
+        <button
+          className={`btn has-badge${showAlarms ? ' on' : ''}`}
+          title={unacked.length ? `${unacked.length} unacknowledged alarm(s)` : 'Alarms'}
+          onClick={() => setShowAlarms((v) => !v)}
+        >
+          <IconBell />Alarms
+          {unacked.length > 0 && <span className={`count-badge ${unackedCritical ? 'critical' : 'warning'}`}>{unacked.length}</span>}
+        </button>
         <button className={`btn${showTraffic ? ' on' : ''}`} onClick={() => setShowTraffic((v) => !v)}><IconList />Traffic</button>
         <button className={`btn${showSim ? ' on' : ''}`} onClick={() => setShowSim((v) => !v)}><IconServer />Simulator</button>
         <button className="btn icon" title={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={toggleTheme}>{theme === 'dark' ? <IconSun /> : <IconMoon />}</button>
@@ -360,7 +409,7 @@ export default function App() {
               <div className="empty">
                 <div className="brand-mark" style={{ width: 44, height: 44, fontSize: 16, margin: '0 auto 14px', borderRadius: 10 }}>MB</div>
                 <h2>Welcome to AppMODBUS</h2>
-                <p>A Modbus master for testing slaves over RTU, TCP/IP and RTU over TCP/UDP.</p>
+                <p>A Modbus master for testing slaves over RTU and ASCII serial lines, Modbus TCP/UDP, and RTU/ASCII tunnelled over TCP or UDP.</p>
                 <ol>
                   <li>Set up a <b>Connection</b> (serial port or IP address)</li>
                   <li>Add a <b>poll window</b> with slave ID, function, address and quantity</li>
@@ -385,6 +434,16 @@ export default function App() {
       </div>
 
       <TrafficPanel visible={showTraffic} onClose={() => setShowTraffic(false)} onError={onError} />
+      <AlarmsPanel
+        visible={showAlarms}
+        alarms={alarms}
+        polls={polls}
+        sound={alarmSound}
+        onSound={setAlarmSound}
+        onClose={() => setShowAlarms(false)}
+        onError={onError}
+        onInfo={onInfo}
+      />
 
       <footer className="statusbar">
         {connections.length === 0 && <span className="item">No connection</span>}
@@ -395,6 +454,11 @@ export default function App() {
           </span>
         ))}
         <span style={{ flex: 1 }} />
+        {alarms.some((a) => a.active) && (
+          <span className={`item alarm-status ${alarms.some((a) => a.active && a.severity === 'critical') ? 'critical' : 'warning'}`} style={{ cursor: 'pointer' }} onClick={() => setShowAlarms(true)}>
+            <IconBell />{alarms.filter((a) => a.active).length} active alarm(s)
+          </span>
+        )}
         {order.some((id) => polls[id]?.config.record && polls[id]?.state.running) && (
           <span className="item rec-status"><span className="rec-dot" />Recording {order.filter((id) => polls[id]?.config.record).length} window(s)</span>
         )}
@@ -459,6 +523,16 @@ export default function App() {
             setDialog(null)
             notify(`Opened ${created.length} poll window(s)`, false)
           }}
+          onClose={() => setDialog(null)}
+          onInfo={onInfo}
+        />
+      )}
+      {dialog?.kind === 'tests' && (
+        <TestsDialog
+          sequences={sequences}
+          connections={connections}
+          formats={formats}
+          onChange={setSequences}
           onClose={() => setDialog(null)}
           onInfo={onInfo}
         />
