@@ -59,16 +59,24 @@ automatic updates work again.
 
 ## Publishing a release
 
+**From GitHub (recommended):** open **Actions → Build → Run workflow**, keep the branch on
+**main**, enter the version (e.g. `0.3.0`, or `0.4.0-beta.1` for a beta) and click
+**Run workflow**. The same run:
+- tests and builds all three platforms with that version;
+- writes `checksums.txt` for all packages, then signs and verifies it;
+- creates the `v…` tag on the commit it built;
+- publishes the release with auto-generated notes.
+
+It refuses to run if the version is malformed, the tag already exists, or the branch isn't
+`main`. Leave the version empty for a test build that publishes nothing.
+
+**From a terminal:** pushing a tag does the same thing:
+
 ```sh
-git tag v0.2.0          # stable
-git tag v0.3.0-beta.1   # beta: any tag with "-" becomes a GitHub pre-release
+git tag v0.3.0          # stable
+git tag v0.4.0-beta.1   # beta: any version with "-" becomes a GitHub pre-release
 git push origin --tags
 ```
-
-The `Build` workflow builds all three platforms with the version taken from the tag, then:
-- writes `checksums.txt` for all packages;
-- signs and verifies it;
-- publishes the release with auto-generated notes.
 
 Edit the release notes on GitHub if you like; they appear in the app's **What's new**
 section, which supports headings, bullet lists, **bold** and `code`.

@@ -5,7 +5,14 @@ on:
     branches: [main]
     tags: ["v*"]
   pull_request:
+  # Actions > Build > Run workflow. With a version this publishes a release
+  # from main and creates its tag; without one it is just a test build.
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, e.g. 0.2.0 or 0.3.0-beta.1 (empty = test build only)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -67,11 +74,18 @@ jobs:
         shell: bash
         env:
           UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+          if [[ -n "$INPUT_VERSION" ]]; then
+            VERSION="${INPUT_VERSION#v}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF_NAME#v}"
           else
             VERSION="0.0.0-dev.${GITHUB_RUN_NUMBER}"
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::'$VERSION' is not a version like 1.2.3 or 1.2.3-beta.1"
+            exit 1
           fi
           # The public key is pinned in internal/version; make sure the
           # signing secret (if available) is the matching one.
@@ -110,10 +124,31 @@ jobs:
     # Publishes a GitHub release with signed checksums. The in-app updater
     # only installs packages listed in a checksums.txt whose Ed25519
     # signature matches the public key compiled into the running build.
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.version != '')
     needs: build
     runs-on: ubuntu-24.04
     steps:
+      - name: Release tag
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+              echo "::error::Releases are published from main; run the workflow on main"
+              exit 1
+            fi
+            TAG="v${INPUT_VERSION#v}"
+            # Never overwrite an existing release by accident.
+            if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+              echo "::error::Tag $TAG already exists; choose a new version"
+              exit 1
+            fi
+          else
+            TAG="$GITHUB_REF_NAME"
+          fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "Publishing $TAG from $GITHUB_SHA"
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
@@ -137,6 +172,9 @@ jobs:
           go run ./cmd/updatekey verify dist/checksums.txt "$PINNED"
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
+          name: AppMODBUS ${{ env.TAG }}
           files: dist/*
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(env.TAG, '-') }}
           generate_release_notes: true
