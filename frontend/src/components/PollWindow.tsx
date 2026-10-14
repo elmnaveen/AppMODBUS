@@ -3,8 +3,9 @@ import { api, errText } from '../api'
 import { Chart } from '../charts/Chart'
 import { addSeries, defaultInline, MAX_SERIES, resolveSeries, type ChartSeries, type InlineChart } from '../charts/model'
 import { ALARM_LEVEL_LABELS, fc2, isBitFunction, isWritable, type AlarmLevel, type Cell, type ConnectionInfo, type FormatInfo, type Poll } from '../types'
-import { ContextMenu } from './ContextMenu'
-import { IconChart, IconGear, IconOnce, IconPlay, IconStop, IconX } from './Icons'
+import { ContextMenu, Dropdown, type MenuEntry } from './Menu'
+import { formatGroups } from './formatMenu'
+import { IconChart, IconGear, IconOnce, IconPen, IconPlay, IconStop, IconTag, IconX } from './Icons'
 
 const ROWS = 10
 
@@ -75,6 +76,54 @@ function PollWindowImpl({
     onInline(c.id, { ...cur, open: true, series })
   }
 
+  // Header format picker: changes the whole window at once while it keeps polling.
+  const windowFormatMenu = (): MenuEntry[] => {
+    const setFormat = (id: string) => run(async () => { await api.updatePoll({ ...c, format: id }) })
+    const groups = formatGroups(formats, c.format, setFormat)
+    const entries: MenuEntry[] = groups.flatMap((g, i): MenuEntry[] => [...(i ? [{ type: 'sep' } as MenuEntry] : []), ...g.items])
+    const overrides = Object.keys(c.cellFormats).length
+    if (overrides) {
+      entries.push({ type: 'sep' }, {
+        label: `Clear ${overrides} register override${overrides > 1 ? 's' : ''}`,
+        title: 'Registers given their own format (right-click → Format) go back to the window format',
+        onSelect: () => run(async () => { await api.updatePoll({ ...c, cellFormats: {} }) }),
+      })
+    }
+    return entries
+  }
+
+  // Right-click menu for one register: tag and write, a Chart submenu, and a
+  // Format submenu grouped by width, then by type (e.g. 32-bit ▸ Float ▸ CD AB).
+  const cellMenu = (cell: Cell): MenuEntry[] => {
+    const shown = inInline(cell.address)
+    const entries: MenuEntry[] = [
+      { label: cell.name ? `Edit tag “${cell.name}”…` : 'Name / scale this register…', icon: <IconTag />, onSelect: () => onTag(cell) },
+    ]
+    if (isWritable(c.function)) entries.push({ label: 'Write value…', icon: <IconPen />, onSelect: () => onWrite(cell) })
+    entries.push({ type: 'sep' }, {
+      type: 'sub', label: 'Chart', icon: <IconChart />, items: [
+        { label: 'Show in window chart', checked: shown, disabled: !shown && (inline?.series.length ?? 0) >= MAX_SERIES, onSelect: () => toggleInline(cell) },
+        { type: 'sep' },
+        ...chartTargets.map((t): MenuEntry => ({ label: `Add to “${t.name}”`, disabled: t.full, onSelect: () => onChartCell(c.id, cell.address, t.id) })),
+        { label: 'Add to new chart', onSelect: () => onChartCell(c.id, cell.address, 'new') },
+      ],
+    })
+    if (bits) return entries
+    const cur = cell.format || c.format
+    const pick = (id: string) => () => run(() => api.setCellFormat(c.id, cell.address, id))
+    const groups = formatGroups(formats, cur, (id) => pick(id)()).map((g): MenuEntry => (
+      { type: 'sub', label: g.group, icon: g.here ? <span className="wm-dot" /> : undefined, items: g.items }
+    ))
+    entries.push({ type: 'sep' }, {
+      type: 'sub', label: 'Format', items: [
+        ...groups,
+        { type: 'sep' },
+        { label: `Use window format (${fmtLabel(c.format)})`, radio: true, checked: !cell.format, onSelect: pick('') },
+      ],
+    })
+    return entries
+  }
+
   const columns: Cell[][] = []
   for (let i = 0; i < s.cells.length; i += ROWS) columns.push(s.cells.slice(i, i + ROWS))
 
@@ -91,6 +140,14 @@ function PollWindowImpl({
           <span>SR = <b>{c.scanRateMs}</b> ms</span>
         </span>
         <span className="pw-actions">
+          {!bits && (
+            <Dropdown
+              className="sm fmt-pick"
+              label={fmtLabel(c.format)}
+              title="Display format for this window (applies immediately)"
+              entries={windowFormatMenu()}
+            />
+          )}
           <button
             className={`btn sm rec${c.record ? ' on' : ''}`}
             title={c.record ? 'Recording to disk — click to stop' : 'Record values to disk'}
@@ -188,52 +245,7 @@ function PollWindowImpl({
           />
         </div>
       )}
-      {menu && (
-        <ContextMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
-          <button onClick={() => { setMenu(null); onTag(menu.cell) }}>{menu.cell.name ? `Edit tag “${menu.cell.name}”…` : 'Name / scale this register…'}</button>
-          {isWritable(c.function) && (
-            <button onClick={() => { setMenu(null); onWrite(menu.cell) }}>Write value…</button>
-          )}
-          <hr />
-          <div className="grp">Chart</div>
-          <button
-            disabled={!inInline(menu.cell.address) && (inline?.series.length ?? 0) >= MAX_SERIES}
-            onClick={() => { setMenu(null); toggleInline(menu.cell) }}
-          >
-            {inInline(menu.cell.address) ? 'Remove from window chart' : 'Show in window chart'}
-          </button>
-          {chartTargets.map((t) => (
-            <button key={t.id} disabled={t.full} onClick={() => { setMenu(null); onChartCell(c.id, menu.cell.address, t.id) }}>
-              Add to “{t.name}”
-            </button>
-          ))}
-          <button onClick={() => { setMenu(null); onChartCell(c.id, menu.cell.address, 'new') }}>Add to new chart</button>
-          {!bits && <hr />}
-          {!bits && ['16-bit', '32-bit', '64-bit'].map((g) => (
-            <div key={g}>
-              <div className="grp">{g}</div>
-              {formats.filter((f) => f.group === g).map((f) => (
-                <button
-                  key={f.id}
-                  className={menu.cell.format === f.id ? 'cur' : ''}
-                  onClick={() => {
-                    setMenu(null)
-                    run(() => api.setCellFormat(c.id, menu.cell.address, f.id))
-                  }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          ))}
-          {!bits && <hr />}
-          {!bits && (
-            <button onClick={() => { setMenu(null); run(() => api.setCellFormat(c.id, menu.cell.address, '')) }}>
-              Reset to window format ({fmtLabel(c.format)})
-            </button>
-          )}
-        </ContextMenu>
-      )}
+      {menu && <ContextMenu x={menu.x} y={menu.y} entries={cellMenu(menu.cell)} onClose={() => setMenu(null)} />}
     </div>
   )
 }

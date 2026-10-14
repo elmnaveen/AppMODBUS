@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=AppMODBUS
+Name=Modbus Studio
 GenericName=Modbus master
 Comment=Poll and test Modbus RTU/TCP devices
 Exec=appmodbus

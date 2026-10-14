@@ -7,7 +7,7 @@ import type {
   DataSettings, Sample, SeriesInfo,
   ImportOptions, ImportPreview, ImportResult, Profile, ProfileFolders, ProfileSummary, Tag,
   Layout, LoadResult, WorkspaceState,
-  AppInfo, UpdateProgress, UpdateSettings, UpdateState,
+  AppInfo, UpdateProgress, UpdateSettings, UpdateState, LogEntry, LogLevel,
   ConnectionConfig, ConnectionInfo, FormatInfo, Poll, PollConfig, SimConfig,
   SimStatus, SimTable, TrafficEntry, WriteRequest,
 } from './types'
@@ -133,6 +133,13 @@ export const api = {
   skipVersion: (v: string): Promise<void> => g.SkipVersion(v),
   openReleasePage: (): Promise<void> => g.OpenReleasePage(),
   installUpdate: (): Promise<void> => g.InstallUpdate(),
+
+  appLog: (limit: number): Promise<LogEntry[]> => g.AppLog(limit),
+  clearAppLog: (): Promise<void> => g.ClearAppLog(),
+  appLogFolder: (): Promise<string> => g.AppLogFolder(),
+  openAppLogFolder: (): Promise<void> => g.OpenAppLogFolder(),
+  exportAppLog: (): Promise<string> => g.ExportAppLog(),
+  logUI: (level: LogLevel, message: string): Promise<void> => g.LogUI(level, message),
 }
 
 export const events = {
@@ -146,6 +153,7 @@ export const events = {
   onWorkspace: (cb: (s: WorkspaceState) => void) => EventsOn('workspace:state', cb),
   onUpdateState: (cb: (s: UpdateState) => void) => EventsOn('update:state', cb),
   onUpdateProgress: (cb: (p: UpdateProgress) => void) => EventsOn('update:progress', cb),
+  onAppLog: (cb: (e: LogEntry) => void) => EventsOn('applog', cb),
 }
 
 /** Turns a rejected binding promise into a display string. */

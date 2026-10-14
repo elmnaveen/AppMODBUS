@@ -1,8 +1,8 @@
 {
   "format": "appmodbus-profile",
   "version": 1,
-  "name": "AppMODBUS demo meter (simulator)",
-  "manufacturer": "AppMODBUS",
+  "name": "Modbus Studio demo meter (simulator)",
+  "manufacturer": "Modbus Studio",
   "model": "Demo meter",
   "description": "Example profile matching the built-in simulator's live demo values (Simulator > Live demo values). Use it as a template for your own meters.",
   "defaultSlaveId": 1,

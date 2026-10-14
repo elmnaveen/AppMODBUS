@@ -1,4 +1,4 @@
-# AppMODBUS
+# Modbus Studio
 
 A cross-platform Modbus master (in the spirit of Modbus Poll) with a built-in slave simulator.
 It runs as a native desktop app on Windows, macOS and Linux and is written in **Go** using **Wails v2**,
@@ -58,7 +58,7 @@ never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time
 
 ## Quick start
 
-1. Launch AppMODBUS and click **Try with the built-in simulator**. This starts a slave on
+1. Launch Modbus Studio and click **Try with the built-in simulator**. This starts a slave on
    `127.0.0.1:5020`, connects to it and opens three poll windows.
 2. Double-click a holding register or coil to write it. Right-click a register to change its format,
    name it, or add it to a chart. **Chart** in a window's title bar shows its values over time.
@@ -78,7 +78,7 @@ Download from the [latest release](https://github.com/elmnaveen/AppMODBUS/releas
 | Other Linux (portable) | `AppMODBUS-linux-amd64.tar.gz` (needs WebKitGTK 4.1) |
 
 On Ubuntu, double-click the `.deb` or run `sudo apt install ./AppMODBUS-ubuntu-*.deb`. apt installs the
-WebKitGTK dependency, and AppMODBUS appears in the app menu. To use serial ports, add yourself to the
+WebKitGTK dependency, and Modbus Studio appears in the app menu. To use serial ports, add yourself to the
 `dialout` group once: `sudo usermod -aG dialout $USER`, then log out and in again.
 
 Installed copies update themselves (see [docs/UPDATES.md](docs/UPDATES.md)). A `.deb` installation is

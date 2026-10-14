@@ -7,9 +7,9 @@
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "info": {
-    "companyName": "AppMODBUS",
-    "productName": "AppMODBUS",
-    "productVersion": "0.2.0",
+    "companyName": "Modbus Studio",
+    "productName": "Modbus Studio",
+    "productVersion": "1.0.0",
     "comments": "Modbus master / poll and slave simulator"
   }
 }

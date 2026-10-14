@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-type Theme = 'light' | 'dark'
+export type Theme = 'light' | 'dark'
 const KEY = 'appmodbus.theme'
 
 function initial(): Theme {
@@ -14,7 +14,7 @@ function initial(): Theme {
 }
 
 /** Light/dark theme stored per machine. */
-export function useTheme(): [Theme, () => void] {
+export function useTheme(): [Theme, () => void, (t: Theme) => void] {
   const [theme, setTheme] = useState<Theme>(initial)
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -24,5 +24,28 @@ export function useTheme(): [Theme, () => void] {
       /* ignore */
     }
   }, [theme])
-  return [theme, () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))]
+  return [theme, () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), setTheme]
+}
+
+export type MenuStyle = 'toolbar' | 'menubar' | 'modbuspoll'
+const MENU_KEY = 'appmodbus.menuStyle'
+
+/** Grouped toolbar, classic menu bar, or Modbus Poll-style menus and toolbar; stored per machine. */
+export function useMenuStyle(): [MenuStyle, (m: MenuStyle) => void] {
+  const [style, setStyle] = useState<MenuStyle>(() => {
+    try {
+      const v = localStorage.getItem(MENU_KEY)
+      return v === 'menubar' || v === 'modbuspoll' ? v : 'toolbar'
+    } catch {
+      return 'toolbar'
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem(MENU_KEY, style)
+    } catch {
+      /* ignore */
+    }
+  }, [style])
+  return [style, setStyle]
 }

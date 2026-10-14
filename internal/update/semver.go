@@ -1,4 +1,4 @@
-// Package update finds, verifies and installs new AppMODBUS releases
+// Package update finds, verifies and installs new Modbus Studio releases
 // published on GitHub.
 package update
 

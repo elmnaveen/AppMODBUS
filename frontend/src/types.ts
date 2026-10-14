@@ -537,3 +537,16 @@ export interface SequenceRun {
   results: StepResult[]
   seq: number
 }
+
+// ---------- application log ----------
+
+export type LogLevel = 'info' | 'warn' | 'error'
+
+export interface LogEntry {
+  id: number
+  time: number // unix ms
+  level: LogLevel
+  /** app, connection, poll, write, alarm, simulator, workspace, update, recording, scan, test, ui */
+  source: string
+  message: string
+}

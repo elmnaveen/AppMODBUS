@@ -1,4 +1,4 @@
-// Package simulator implements a Modbus slave used to test AppMODBUS
+// Package simulator implements a Modbus slave used to test Modbus Studio
 // without hardware.
 package simulator
 

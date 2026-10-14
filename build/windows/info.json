@@ -1,15 +1,19 @@
 {
 	"fixed": {
-		"file_version": "{{.Info.ProductVersion}}"
+		"file_version": "{{.Info.ProductVersion}}",
+		"product_version": "{{.Info.ProductVersion}}"
 	},
 	"info": {
-		"0000": {
-			"ProductVersion": "{{.Info.ProductVersion}}",
-			"CompanyName": "{{.Info.CompanyName}}",
-			"FileDescription": "{{.Info.ProductName}}",
-			"LegalCopyright": "{{.Info.Copyright}}",
+		"0409": {
 			"ProductName": "{{.Info.ProductName}}",
-			"Comments": "{{.Info.Comments}}"
+			"ProductVersion": "{{.Info.ProductVersion}}",
+			"FileVersion": "{{.Info.ProductVersion}}",
+			"FileDescription": "{{.Info.ProductName}}",
+			"CompanyName": "{{.Info.CompanyName}}",
+			"LegalCopyright": "{{.Info.Copyright}}",
+			"Comments": "{{.Info.Comments}}",
+			"InternalName": "AppMODBUS",
+			"OriginalFilename": "AppMODBUS.exe"
 		}
 	}
 }

@@ -1,3 +1,28 @@
+export namespace applog {
+	
+	export class Entry {
+	    id: number;
+	    time: number;
+	    level: string;
+	    source: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Entry(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.time = source["time"];
+	        this.level = source["level"];
+	        this.source = source["source"];
+	        this.message = source["message"];
+	    }
+	}
+
+}
+
 export namespace datafmt {
 	
 	export class Info {

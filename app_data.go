@@ -87,6 +87,11 @@ func (a *App) setRecErr(err error) {
 	}
 	if old, _ := a.recErr.Load().(string); old != msg {
 		a.recErr.Store(msg)
+		if msg != "" {
+			a.log.Errorf(srcRecording, "Recording: %s", msg)
+		} else if old != "" {
+			a.log.Infof(srcRecording, "Recording works again")
+		}
 		runtime.EventsEmit(a.ctx, eventRecording, msg)
 	}
 }
@@ -117,7 +122,13 @@ func (a *App) SetPollRecording(pollID string, on bool) error {
 	if on && a.rec == nil {
 		return errors.New("recording is unavailable: " + a.recErrText())
 	}
-	return a.engine.SetRecord(pollID, on)
+	err := a.engine.SetRecord(pollID, on)
+	state := "stopped"
+	if on {
+		state = "started"
+	}
+	a.logResult(srcRecording, err, "%s: recording %s", a.pollName(pollID), state)
+	return err
 }
 
 func (a *App) recErrText() string { s, _ := a.recErr.Load().(string); return s }
@@ -214,7 +225,7 @@ func (a *App) ExportRecording(ids []string, from, to int64, format string) (Expo
 	if format == "xlsx" {
 		ext, label = ".xlsx", "Excel workbook (*.xlsx)"
 	}
-	name := "AppMODBUS-" + time.UnixMilli(from).Format("2006-01-02_1504") + ext
+	name := "ModbusStudio-" + time.UnixMilli(from).Format("2006-01-02_1504") + ext
 	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
 		Title: "Export recording", DefaultFilename: name,
 		Filters: []runtime.FileFilter{{DisplayName: label, Pattern: "*" + ext}},

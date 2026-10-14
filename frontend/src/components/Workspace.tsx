@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { api, errText } from '../api'
 import type { MissingPort, WorkspaceState } from '../types'
-import { IconChevron, IconFile, IconFolder, IconPlus, IconSave } from './Icons'
+import { IconFile, IconFolder, IconGear, IconPlus, IconSave } from './Icons'
+import { Dropdown, type MenuEntry } from './Menu'
 import { Modal } from './Modal'
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
@@ -14,41 +15,33 @@ interface MenuProps {
   onOpenRecent: (path: string) => void
   onSave: () => void
   onSaveAs: () => void
+  onPreferences: () => void
+  /** Shown as File → Exit when set (classic menu bar). */
+  onExit?: () => void
+}
+
+/** The File menu, shared by the toolbar drop-down and the classic menu bar. */
+export function fileMenuEntries({ ws, onNew, onOpen, onOpenRecent, onSave, onSaveAs, onPreferences, onExit }: MenuProps): MenuEntry[] {
+  const recent: MenuEntry[] = ws.recent.length === 0
+    ? [{ label: 'No recent workspaces', disabled: true, onSelect: () => {} }]
+    : ws.recent.map((p, i) => ({ label: `${i + 1}  ${p.split(/[\\/]/).pop()?.replace(/\.mbw$/i, '')}`, title: p, onSelect: () => onOpenRecent(p) }))
+  const entries: MenuEntry[] = [
+    { label: 'New workspace', icon: <IconPlus />, hint: `${mod}N`, onSelect: onNew },
+    { label: 'Open…', icon: <IconFolder />, hint: `${mod}O`, onSelect: onOpen },
+    { type: 'sub', label: 'Open recent', items: recent },
+    { type: 'sep' },
+    { label: 'Save', icon: <IconSave />, hint: `${mod}S`, onSelect: onSave },
+    { label: 'Save as…', hint: isMac ? '⇧⌘S' : 'Ctrl+Shift+S', onSelect: onSaveAs },
+    { type: 'sep' },
+    { label: 'Preferences…', icon: <IconGear />, hint: `${mod},`, onSelect: onPreferences },
+  ]
+  if (onExit) entries.push({ type: 'sep' }, { label: 'Exit', hint: isMac ? '⌘Q' : 'Alt+F4', onSelect: onExit })
+  return entries
 }
 
 /** The File dropdown in the toolbar. */
-export function FileMenu({ ws, onNew, onOpen, onOpenRecent, onSave, onSaveAs }: MenuProps) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!open) return
-    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
-    window.addEventListener('mousedown', close)
-    return () => window.removeEventListener('mousedown', close)
-  }, [open])
-  const run = (fn: () => void) => () => { setOpen(false); fn() }
-  return (
-    <div className="dropdown" ref={ref}>
-      <button className={`btn${open ? ' on' : ''}`} onClick={() => setOpen((o) => !o)}><IconFile />File<IconChevron /></button>
-      {open && (
-        <div className="ctx menu-pop">
-          <button onClick={run(onNew)}><IconPlus />New workspace<kbd>{mod}N</kbd></button>
-          <button onClick={run(onOpen)}><IconFolder />Open…<kbd>{mod}O</kbd></button>
-          <button onClick={run(onSave)}><IconSave />Save<kbd>{mod}S</kbd></button>
-          <button onClick={run(onSaveAs)}><span className="ico-pad" />Save as…<kbd>{isMac ? '⇧⌘S' : 'Ctrl+Shift+S'}</kbd></button>
-          <hr />
-          <div className="grp">Recent</div>
-          {ws.recent.length === 0 && <div className="muted" style={{ padding: '4px 10px 6px' }}>No recent workspaces</div>}
-          {ws.recent.map((p) => (
-            <button key={p} onClick={run(() => onOpenRecent(p))} title={p}>
-              <span className="recent-name">{p.split(/[\\/]/).pop()?.replace(/\.mbw$/i, '')}</span>
-              <span className="recent-path">{p}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
+export function FileMenu(props: MenuProps) {
+  return <Dropdown label="File" icon={<IconFile />} entries={fileMenuEntries(props)} />
 }
 
 /** Asks what to do with unsaved changes. Resolves to whether to continue. */

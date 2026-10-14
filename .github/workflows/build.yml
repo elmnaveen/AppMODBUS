@@ -104,7 +104,7 @@ jobs:
           node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('wails.json'));j.info.productVersion=process.argv[1];fs.writeFileSync('wails.json',JSON.stringify(j,null,2))" "${VERSION%%-*}"
           PKG=appmodbus/internal/version
           LDFLAGS="-X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY"
-          echo "Building AppMODBUS $VERSION"
+          echo "Building Modbus Studio $VERSION"
           wails build -clean -platform ${{ matrix.platform }} ${{ matrix.flags }} -ldflags "$LDFLAGS"
 
       - name: Package (Windows)
@@ -242,7 +242,7 @@ jobs:
         with:
           tag_name: ${{ env.TAG }}
           target_commitish: ${{ github.sha }}
-          name: AppMODBUS ${{ env.TAG }}
+          name: Modbus Studio ${{ env.TAG }}
           files: dist/*
           prerelease: ${{ contains(env.TAG, '-') }}
           generate_release_notes: true

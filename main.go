@@ -27,7 +27,7 @@ func main() {
 		appMenu.Append(menu.EditMenu())
 	}
 	err := wails.Run(&options.App{
-		Title:            "AppMODBUS " + version.Version,
+		Title:            "Modbus Studio " + version.Version,
 		Width:            1280,
 		Height:           800,
 		MinWidth:         900,

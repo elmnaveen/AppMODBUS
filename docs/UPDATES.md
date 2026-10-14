@@ -1,6 +1,6 @@
 # Application updates
 
-AppMODBUS updates itself from the GitHub Releases of `elmnaveen/AppMODBUS`.
+Modbus Studio updates itself from the GitHub Releases of `elmnaveen/AppMODBUS`.
 
 ## How it works
 
@@ -89,3 +89,15 @@ anonymously, so a private repository returns "no releases found".
 
 Set `APPMODBUS_UPDATE_API=http://host:port` to point the updater at a GitHub-compatible
 API, for example a local test server. Signature verification still applies.
+
+## Product name vs. file names
+
+The app was renamed from AppMODBUS to **Modbus Studio**. Only the name users see changed. These keep the
+original `AppMODBUS` / `appmodbus` identifiers on purpose, because installed copies depend on them:
+
+- Release asset names (`AppMODBUS-windows-amd64.exe`, …): older versions look for exactly these names when updating.
+- The executable (`AppMODBUS.exe`, `AppMODBUS.app`), the Windows install folder and uninstall entry, and the
+  Debian package (`appmodbus`, `/opt/AppMODBUS`): upgrades replace the existing install instead of adding a second one.
+- The settings and recordings folders (`AppMODBUS`), the WebView data folder and the `appmodbus.*` UI preference
+  keys: users keep their settings, recent files and recordings.
+- The `appmodbus-workspace` / `appmodbus-profile` file format IDs: existing `.mbw` workspaces and profiles still open.

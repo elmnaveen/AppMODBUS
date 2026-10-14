@@ -145,10 +145,10 @@ func Decode(b []byte) (Profile, error) {
 		return Profile{}, fmt.Errorf("not a profile file: %w", err)
 	}
 	if p.Format != FormatID {
-		return Profile{}, errors.New("not an AppMODBUS device profile")
+		return Profile{}, errors.New("not a Modbus Studio device profile")
 	}
 	if p.Version > CurrentVersion {
-		return Profile{}, fmt.Errorf("profile format %d needs a newer AppMODBUS", p.Version)
+		return Profile{}, fmt.Errorf("profile format %d needs a newer Modbus Studio", p.Version)
 	}
 	return p, p.Normalize()
 }

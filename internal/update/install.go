@@ -87,7 +87,7 @@ func bundleRoot(exe string) (string, error) {
 			return dir, nil
 		}
 	}
-	return "", errors.New("AppMODBUS is not running from an .app bundle")
+	return "", errors.New("Modbus Studio is not running from an .app bundle")
 }
 
 func installMacBundle(pkgPath, exe string) (Launch, error) {
