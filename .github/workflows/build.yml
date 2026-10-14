@@ -68,6 +68,13 @@ jobs:
       - name: Linux dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+      - name: NSIS (Windows installer tool)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Current windows-latest images no longer ship NSIS.
+          choco install nsis -y --no-progress
+          "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
       - name: Build
@@ -103,7 +110,9 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item build/bin/AppMODBUS.exe dist/AppMODBUS-windows-amd64.exe
-          Copy-Item build/bin/*installer.exe dist/AppMODBUS-windows-amd64-installer.exe
+          $installer = Get-ChildItem build/bin -Filter *installer.exe | Select-Object -First 1
+          if (-not $installer) { throw "NSIS installer was not built (is makensis installed?)" }
+          Copy-Item $installer.FullName dist/AppMODBUS-windows-amd64-installer.exe
       - name: Package (macOS)
         if: runner.os == 'macOS'
         run: |
