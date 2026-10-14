@@ -254,6 +254,94 @@ export namespace engine {
 
 }
 
+export namespace main {
+	
+	export class AppInfo {
+	    version: string;
+	    commit: string;
+	    os: string;
+	    arch: string;
+	    repo: string;
+	    canInstall: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AppInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.commit = source["commit"];
+	        this.os = source["os"];
+	        this.arch = source["arch"];
+	        this.repo = source["repo"];
+	        this.canInstall = source["canInstall"];
+	    }
+	}
+	export class UpdateState {
+	    status: string;
+	    release?: update.Release;
+	    error: string;
+	    checkedAt: number;
+	    skipped: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.release = this.convertValues(source["release"], update.Release);
+	        this.error = source["error"];
+	        this.checkedAt = source["checkedAt"];
+	        this.skipped = source["skipped"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
+export namespace settings {
+	
+	export class Settings {
+	    updateChannel: string;
+	    autoCheckUpdates: boolean;
+	    skippedVersion: string;
+	    lastUpdateCheckAt: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Settings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.updateChannel = source["updateChannel"];
+	        this.autoCheckUpdates = source["autoCheckUpdates"];
+	        this.skippedVersion = source["skippedVersion"];
+	        this.lastUpdateCheckAt = source["lastUpdateCheckAt"];
+	    }
+	}
+
+}
+
 export namespace simulator {
 	
 	export class Config {
@@ -304,6 +392,73 @@ export namespace simulator {
 	        this.requests = source["requests"];
 	        this.clients = source["clients"];
 	        this.error = source["error"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
+export namespace update {
+	
+	export class Asset {
+	    name: string;
+	    url: string;
+	    size: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Asset(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.url = source["url"];
+	        this.size = source["size"];
+	    }
+	}
+	export class Release {
+	    version: string;
+	    tag: string;
+	    name: string;
+	    notes: string;
+	    pageUrl: string;
+	    prerelease: boolean;
+	    publishedAt: string;
+	    asset: Asset;
+	    installer?: Asset;
+	
+	    static createFrom(source: any = {}) {
+	        return new Release(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.tag = source["tag"];
+	        this.name = source["name"];
+	        this.notes = source["notes"];
+	        this.pageUrl = source["pageUrl"];
+	        this.prerelease = source["prerelease"];
+	        this.publishedAt = source["publishedAt"];
+	        this.asset = this.convertValues(source["asset"], Asset);
+	        this.installer = this.convertValues(source["installer"], Asset);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

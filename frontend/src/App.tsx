@@ -2,21 +2,23 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, errText, events } from './api'
 import { ConnectionsDialog, blankConnection } from './components/ConnectionsDialog'
 import {
-  IconBolt, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
+  IconBolt, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
 } from './components/Icons'
 import { PollDialog, blankPoll } from './components/PollDialog'
 import { PollWindow } from './components/PollWindow'
 import { SimulatorPanel, defaultSim } from './components/SimulatorPanel'
 import { TrafficPanel } from './components/TrafficPanel'
+import { AboutDialog, UpdateBanner, useUpdates } from './components/Updates'
 import { ManualWriteDialog, WriteCellDialog } from './components/WriteDialogs'
 import { useTheme } from './theme'
-import { fc2, type Cell, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
+import { fc2, type AppInfo, type Cell, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
 
 type Dialog =
   | { kind: 'connections'; id?: string }
   | { kind: 'poll'; id?: string }
   | { kind: 'writeCell'; pollId: string; cell: Cell }
   | { kind: 'write' }
+  | { kind: 'about' }
   | null
 
 export default function App() {
@@ -31,6 +33,8 @@ export default function App() {
   const [showTraffic, setShowTraffic] = useState(true)
   const [showSim, setShowSim] = useState(false)
   const [sim, setSim] = useState<SimStatus | null>(null)
+  const [info, setInfo] = useState<AppInfo | null>(null)
+  const updates = useUpdates()
   const [toast, setToast] = useState<{ msg: string; error: boolean } | null>(null)
 
   const notify = useCallback((msg: string, error = true) => {
@@ -39,6 +43,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    api.appInfo().then(setInfo)
     api.formats().then(setFormats)
     api.connections().then(setConnections)
     api.simStatus().then(setSim)
@@ -127,6 +132,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <div>
       <header className="toolbar">
         <div className="brand"><span className="brand-mark">MB</span>AppMODBUS</div>
         <button className="btn" onClick={() => setDialog({ kind: 'connections' })}><IconPlug />Connection</button>
@@ -142,7 +148,23 @@ export default function App() {
         <button className={`btn${showTraffic ? ' on' : ''}`} onClick={() => setShowTraffic((v) => !v)}><IconList />Traffic</button>
         <button className={`btn${showSim ? ' on' : ''}`} onClick={() => setShowSim((v) => !v)}><IconServer />Simulator</button>
         <button className="btn icon" title={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={toggleTheme}>{theme === 'dark' ? <IconSun /> : <IconMoon />}</button>
+        <button
+          className="btn icon has-badge"
+          title={updates.state.status === 'available' ? `Update ${updates.state.release?.version} available` : 'About & updates'}
+          onClick={() => setDialog({ kind: 'about' })}
+        >
+          <IconInfo />
+          {updates.state.status === 'available' && !updates.state.skipped && <span className="badge" />}
+        </button>
       </header>
+      <UpdateBanner
+        state={updates.state}
+        progress={updates.progress}
+        canInstall={info?.canInstall ?? false}
+        onDetails={() => setDialog({ kind: 'about' })}
+        onError={onError}
+      />
+      </div>
 
       <div className="main">
         <section className="workspace">
@@ -201,6 +223,7 @@ export default function App() {
         ))}
         <span style={{ flex: 1 }} />
         <span className="item">{running}/{order.length} polling</span>
+        {info && <span className="item mono" style={{ cursor: 'pointer' }} onClick={() => setDialog({ kind: 'about' })}>v{info.version}</span>}
         <span className="item"><span className={`dot${sim?.running ? ' ok' : ''}`} />Simulator {sim?.running ? `on :${sim.config.port || sim.config.serialPort}` : 'off'}</span>
       </footer>
 
@@ -226,6 +249,9 @@ export default function App() {
           defaults={activePoll ? { connectionId: activePoll.config.connectionId, slaveId: activePoll.config.slaveId } : undefined}
           onClose={() => setDialog(null)}
         />
+      )}
+      {dialog?.kind === 'about' && (
+        <AboutDialog info={info} state={updates.state} progress={updates.progress} onClose={() => setDialog(null)} />
       )}
       {toast && <div className={`toast${toast.error ? ' error' : ''}`}>{toast.msg}</div>}
     </div>

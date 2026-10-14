@@ -64,7 +64,23 @@ jobs:
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
       - name: Build
-        run: wails build -clean -platform ${{ matrix.platform }} ${{ matrix.flags }}
+        shell: bash
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.0.0-dev.${GITHUB_RUN_NUMBER}"
+          fi
+          PUBKEY=""
+          if [ -n "$UPDATE_SIGNING_KEY" ]; then
+            PUBKEY="$(go run ./cmd/updatekey pubkey)"
+          fi
+          PKG=appmodbus/internal/version
+          LDFLAGS="-X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY -X $PKG.UpdatePublicKey=$PUBKEY"
+          echo "Building AppMODBUS $VERSION (signed updates: $([ -n "$PUBKEY" ] && echo yes || echo no))"
+          wails build -clean -platform ${{ matrix.platform }} ${{ matrix.flags }} -ldflags "$LDFLAGS"
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
@@ -89,8 +105,35 @@ jobs:
           name: AppMODBUS-${{ runner.os }}
           path: dist/*
 
-      - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+  release:
+    # Publishes a GitHub release with signed checksums. The in-app updater
+    # only installs packages listed in a checksums.txt whose Ed25519
+    # signature matches the public key compiled into the running build.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums and signature
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          if [ -z "$UPDATE_SIGNING_KEY" ]; then
+            echo "::error::UPDATE_SIGNING_KEY secret is not set; see docs/UPDATES.md"
+            exit 1
+          fi
+          (cd dist && sha256sum AppMODBUS-* > checksums.txt && cat checksums.txt)
+          go run ./cmd/updatekey sign dist/checksums.txt
+          go run ./cmd/updatekey verify dist/checksums.txt "$(go run ./cmd/updatekey pubkey)"
+      - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true

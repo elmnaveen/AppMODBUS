@@ -2,6 +2,7 @@
 import * as Go from '../wailsjs/go/main/App'
 import { EventsOn } from '../wailsjs/runtime/runtime'
 import type {
+  AppInfo, UpdateProgress, UpdateSettings, UpdateState,
   ConnectionConfig, ConnectionInfo, FormatInfo, Poll, PollConfig, SimConfig,
   SimStatus, SimTable, TrafficEntry, WriteRequest,
 } from './types'
@@ -45,12 +46,23 @@ export const api = {
   simStatus: (): Promise<SimStatus> => g.SimStatus(),
   simRead: (t: SimTable, address: number, qty: number): Promise<number[]> => g.SimRead(t, address, qty),
   simWrite: (t: SimTable, address: number, values: number[]): Promise<void> => g.SimWrite(t, address, values),
+
+  appInfo: (): Promise<AppInfo> => g.AppInfo(),
+  updateSettings: (): Promise<UpdateSettings> => g.UpdateSettings(),
+  setUpdateSettings: (channel: string, autoCheck: boolean): Promise<UpdateSettings> => g.SetUpdateSettings(channel, autoCheck),
+  updateState: (): Promise<UpdateState> => g.GetUpdateState(),
+  checkForUpdates: (): Promise<UpdateState> => g.CheckForUpdates(),
+  skipVersion: (v: string): Promise<void> => g.SkipVersion(v),
+  openReleasePage: (): Promise<void> => g.OpenReleasePage(),
+  installUpdate: (): Promise<void> => g.InstallUpdate(),
 }
 
 export const events = {
   onPoll: (cb: (p: Poll) => void) => EventsOn('poll:update', cb),
   onConnections: (cb: (c: ConnectionInfo[]) => void) => EventsOn('connections', cb),
   onTraffic: (cb: (t: TrafficEntry[]) => void) => EventsOn('traffic', cb),
+  onUpdateState: (cb: (s: UpdateState) => void) => EventsOn('update:state', cb),
+  onUpdateProgress: (cb: (p: UpdateProgress) => void) => EventsOn('update:progress', cb),
 }
 
 /** Turns a rejected binding promise into a display string. */

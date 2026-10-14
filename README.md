@@ -21,6 +21,7 @@ with a **React + TypeScript** UI.
 | Traffic log | Live Tx/Rx frames in hex with timestamps; pause, filter, clear, save to file |
 | Simulator | Built-in Modbus slave (TCP, RTU over TCP/UDP, serial RTU) with an editable data table and optional live demo values |
 | Themes | Light and dark |
+| Updates | Checks GitHub Releases on startup, offers one-click install & restart, Stable/Beta channels; every package is verified with an Ed25519-signed SHA-256 list ([docs/UPDATES.md](docs/UPDATES.md)) |
 
 Several poll windows can share one connection. Requests are queued per connection, so windows
 never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time to turn around.
@@ -63,7 +64,9 @@ Run the tests with `go test -race ./internal/...`. The serial RTU test uses `soc
 virtual serial cable and is skipped if `socat` is not installed.
 
 CI (`.github/workflows/build.yml`) runs the tests and builds Windows (exe + NSIS installer),
-macOS (universal .app) and Linux binaries on every push. Pushing a `v*` tag attaches them to a GitHub release.
+macOS (universal .app) and Linux binaries on every push. Pushing a `v*` tag publishes a GitHub release with
+signed checksums, which installed copies pick up as an update. See [docs/UPDATES.md](docs/UPDATES.md) for the one-time
+signing-key setup.
 
 ## Project layout
 
@@ -73,6 +76,10 @@ internal/modbus          Protocol: PDUs, CRC, RTU/MBAP framing, serial/TCP/UDP t
 internal/datafmt         Register <-> value conversion for every display format and byte order
 internal/engine          Connections, poll windows (one goroutine each), writes, traffic batching
 internal/simulator       Modbus slave: data store, request handler, TCP/UDP/serial servers
+internal/update          Release discovery, signature/checksum verification, self-install
+internal/settings        Persisted user preferences
+internal/version         Build version, injected by CI
+cmd/updatekey            Generates the release signing key; signs and verifies checksums
 frontend/src             React UI (poll windows, dialogs, traffic log, simulator panel)
 ```
 

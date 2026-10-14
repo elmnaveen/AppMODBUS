@@ -26,3 +26,6 @@ export const IconPause = () => <I><path d="M8 5v14M16 5v14" /></I>
 export const IconSave = () => <I><path d="M5 3h11l3 3v15H5V3zM8 3v5h7V3M8 21v-7h8v7" /></I>
 export const IconBolt = () => <I><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" /></I>
 export const IconRefresh = () => <I><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4" /></I>
+export const IconInfo = () => <I><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></I>
+export const IconDownload = () => <I><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></I>
+export const IconExternal = () => <I><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></I>

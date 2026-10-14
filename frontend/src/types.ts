@@ -132,3 +132,54 @@ export const FUNCTIONS: { code: number; label: string }[] = [
 export const isBitFunction = (fc: number) => fc === 1 || fc === 2
 export const isWritable = (fc: number) => fc === 1 || fc === 3
 export const fc2 = (fc: number) => fc.toString().padStart(2, '0')
+
+// ---------- application updates ----------
+
+export interface AppInfo {
+  version: string
+  commit: string
+  os: string
+  arch: string
+  repo: string
+  canInstall: boolean
+}
+
+export interface ReleaseAsset {
+  name: string
+  url: string
+  size: number
+}
+
+export interface Release {
+  version: string
+  tag: string
+  name: string
+  notes: string
+  pageUrl: string
+  prerelease: boolean
+  publishedAt: string
+  asset: ReleaseAsset
+  installer: ReleaseAsset | null
+}
+
+export type UpdateStatus = 'idle' | 'checking' | 'uptodate' | 'available' | 'downloading' | 'installing' | 'error'
+
+export interface UpdateState {
+  status: UpdateStatus
+  release: Release | null
+  error: string
+  checkedAt: number
+  skipped: boolean
+}
+
+export interface UpdateSettings {
+  updateChannel: 'stable' | 'beta'
+  autoCheckUpdates: boolean
+  skippedVersion: string
+  lastUpdateCheckAt: number
+}
+
+export interface UpdateProgress {
+  done: number
+  total: number
+}

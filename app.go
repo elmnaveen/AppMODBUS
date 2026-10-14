@@ -15,16 +15,18 @@ import (
 // App exposes the engine to the frontend. Every exported method becomes a
 // JavaScript binding under window.go.main.App.
 type App struct {
-	ctx    context.Context
-	engine *engine.Engine
+	ctx     context.Context
+	engine  *engine.Engine
+	updates *updater
 }
 
 // NewApp creates the application.
-func NewApp() *App { return &App{} }
+func NewApp() *App { return &App{updates: newUpdater()} }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.engine = engine.New(func(event string, data any) { runtime.EventsEmit(ctx, event, data) })
+	a.startUpdater()
 }
 
 func (a *App) shutdown(context.Context) { a.engine.Shutdown() }

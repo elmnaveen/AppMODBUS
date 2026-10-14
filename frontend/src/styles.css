@@ -251,6 +251,7 @@ input, select, textarea, button { font: inherit; color: inherit; }
 /* ---------- forms ---------- */
 .form { display: grid; grid-template-columns: 150px 1fr; gap: 10px 12px; align-items: center; }
 .form .full { grid-column: 1 / -1; }
+.form > .seg { justify-self: start; }
 .form label.lbl { color: var(--muted); }
 .form .hint { grid-column: 2; font-size: 11.5px; color: var(--faint); margin-top: -6px; }
 input[type="text"], input[type="number"], select, textarea {
@@ -322,3 +323,29 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 2px solid var(--panel); }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- updates ---------- */
+.upd-banner {
+  display: flex; align-items: center; gap: 10px; padding: 6px 12px;
+  background: var(--accent-soft); border-bottom: 1px solid var(--border); color: var(--text);
+}
+.upd-banner > span:first-of-type { white-space: nowrap; }
+.upd-err { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upd-banner > svg { width: 18px; height: 18px; color: var(--accent); flex: none; }
+.upd-progress { display: flex; align-items: center; gap: 10px; flex: 1; font-size: 12px; color: var(--muted); }
+.upd-progress .bar { flex: 1; max-width: 360px; height: 6px; border-radius: 6px; background: var(--border); overflow: hidden; position: relative; }
+.upd-progress .bar > div { height: 100%; background: var(--accent); transition: width .15s; }
+.upd-progress .bar.indeterminate::after {
+  content: ""; position: absolute; inset: 0; width: 40%; background: var(--accent); border-radius: 6px;
+  animation: indet 1.1s ease-in-out infinite;
+}
+@keyframes indet { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+.pill.beta { background: var(--warn); color: #fff; border-color: transparent; margin-left: 4px; }
+.about-head { display: flex; gap: 12px; align-items: center; }
+.notes { user-select: text; font-size: 12.5px; }
+.notes h5 { margin: 8px 0 4px; font-size: 13px; }
+.notes p { margin: 4px 0; }
+.notes ul { margin: 4px 0; padding-left: 20px; }
+.notes code { font-family: var(--mono); background: var(--panel-2); padding: 0 4px; border-radius: 4px; }
+.btn .badge { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
+.btn.has-badge { position: relative; }
