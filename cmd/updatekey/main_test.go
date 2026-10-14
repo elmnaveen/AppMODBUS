@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"appmodbus/internal/version"
+	"modbusstudio/internal/version"
 )
 
 func TestPinnedKeyIsValid(t *testing.T) {

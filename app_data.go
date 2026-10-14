@@ -9,9 +9,9 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"appmodbus/internal/engine"
-	"appmodbus/internal/recorder"
-	"appmodbus/internal/settings"
+	"modbusstudio/internal/engine"
+	"modbusstudio/internal/recorder"
+	"modbusstudio/internal/settings"
 )
 
 const eventRecording = "recording:status"

@@ -81,13 +81,8 @@ const (
 	LinuxDeb
 )
 
-// AssetPrefix starts every release package name. Releases also carry copies
-// named with LegacyAssetPrefix, the name used up to v1.0.x, so installs of
-// those versions (which look only for the old names) can still update.
-const (
-	AssetPrefix       = "ModbusStudio-"
-	LegacyAssetPrefix = "AppMODBUS-"
-)
+// AssetPrefix starts every release package name.
+const AssetPrefix = "ModbusStudio-"
 
 // Linux .deb asset names.
 const (
@@ -96,15 +91,15 @@ const (
 )
 
 // DebInstallPath is where the .deb puts the executable.
-const DebInstallPath = "/opt/AppMODBUS/AppMODBUS"
+const DebInstallPath = "/opt/ModbusStudio/ModbusStudio"
 
 // DetectLinuxFlavor tells whether the running executable was installed
-// from the .deb (it lives in /opt/AppMODBUS and dpkg knows the package).
+// from the .deb (it lives in /opt/ModbusStudio and dpkg knows the package).
 func DetectLinuxFlavor(exe string, webkit41 bool) LinuxFlavor {
 	if exe != DebInstallPath {
 		return LinuxPortable
 	}
-	if _, err := os.Stat("/var/lib/dpkg/info/appmodbus.list"); err != nil {
+	if _, err := os.Stat("/var/lib/dpkg/info/modbus-studio.list"); err != nil {
 		return LinuxPortable
 	}
 	if webkit41 {
@@ -204,7 +199,7 @@ func (u *Updater) Check(ctx context.Context, ch Channel) (*Release, error) {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "AppMODBUS/"+u.Current)
+	req.Header.Set("User-Agent", "ModbusStudio/"+u.Current)
 	resp, err := u.client().Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("could not reach GitHub: %w", err)
@@ -299,7 +294,7 @@ func (u *Updater) Download(ctx context.Context, rel *Release, asset Asset, dir s
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("User-Agent", "AppMODBUS/"+u.Current)
+	req.Header.Set("User-Agent", "ModbusStudio/"+u.Current)
 	// Large downloads must not hit the short default client timeout.
 	c := *u.client()
 	c.Timeout = 0
@@ -363,7 +358,7 @@ func (u *Updater) fetchSmall(ctx context.Context, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "AppMODBUS/"+u.Current)
+	req.Header.Set("User-Agent", "ModbusStudio/"+u.Current)
 	resp, err := u.client().Do(req)
 	if err != nil {
 		return nil, err

@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"time"
 
-	"appmodbus/internal/engine"
-	"appmodbus/internal/modbus"
+	"modbusstudio/internal/engine"
+	"modbusstudio/internal/modbus"
 )
 
 // ---- statistics ----

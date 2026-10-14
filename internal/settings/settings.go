@@ -1,5 +1,5 @@
 // Package settings persists user preferences as JSON in the OS config
-// directory (e.g. %AppData%\AppMODBUS on Windows).
+// directory (e.g. %AppData%\ModbusStudio on Windows).
 package settings
 
 import (
@@ -71,9 +71,18 @@ func Open(dir string) *Store {
 // DefaultDir returns the per-user config directory for Modbus Studio.
 func DefaultDir() string {
 	if d, err := os.UserConfigDir(); err == nil {
-		return filepath.Join(d, "AppMODBUS")
+		return filepath.Join(d, "ModbusStudio")
 	}
 	return "."
+}
+
+// LegacyDir is the config directory used before the rename to Modbus Studio
+// (AppMODBUS up to v2.0.0); "" if the platform has no config directory.
+func LegacyDir() string {
+	if d, err := os.UserConfigDir(); err == nil {
+		return filepath.Join(d, "AppMODBUS")
+	}
+	return ""
 }
 
 // Get returns a copy of the current settings.

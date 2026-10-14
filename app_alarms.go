@@ -11,8 +11,8 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"appmodbus/internal/engine"
-	"appmodbus/internal/settings"
+	"modbusstudio/internal/engine"
+	"modbusstudio/internal/settings"
 )
 
 // startAlarmLog keeps the alarm history next to the settings.

@@ -1,5 +1,5 @@
 {
-  "format": "appmodbus-profile",
+  "format": "modbus-studio-profile",
   "version": 1,
   "name": "Modbus Studio demo meter (simulator)",
   "manufacturer": "Modbus Studio",

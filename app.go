@@ -8,12 +8,13 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"appmodbus/internal/applog"
-	"appmodbus/internal/datafmt"
-	"appmodbus/internal/engine"
-	"appmodbus/internal/modbus"
-	"appmodbus/internal/recorder"
-	"appmodbus/internal/simulator"
+	"modbusstudio/internal/applog"
+	"modbusstudio/internal/datafmt"
+	"modbusstudio/internal/engine"
+	"modbusstudio/internal/legacy"
+	"modbusstudio/internal/modbus"
+	"modbusstudio/internal/recorder"
+	"modbusstudio/internal/simulator"
 )
 
 // App exposes the engine to the frontend. Every exported method becomes a
@@ -35,6 +36,9 @@ type App struct {
 
 	log  *applog.Log
 	logw *logWatcher
+
+	// migrated describes data carried over from AppMODBUS on this start.
+	migrated []legacy.Note
 }
 
 // NewApp creates the application.

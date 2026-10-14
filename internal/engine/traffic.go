@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"appmodbus/internal/modbus"
+	"modbusstudio/internal/modbus"
 )
 
 // TrafficEntry is one raw frame shown in the communication traffic window.

@@ -15,7 +15,7 @@ const FIELD_LABEL: Record<ImportField, string> = {
 }
 
 export const blankProfile = (): Profile => ({
-  format: 'appmodbus-profile', version: 1, name: '', manufacturer: '', model: '', description: '', defaultSlaveId: 1,
+  format: 'modbus-studio-profile', version: 1, name: '', manufacturer: '', model: '', description: '', defaultSlaveId: 1,
   registers: [{ address: 0, function: 3, name: '', format: 'unsigned', gain: 1, offset: 0, unit: '', decimals: -1 }],
 })
 
@@ -333,7 +333,7 @@ export function ImportDialog({ preview, hasShared, onCancel, onSaved }: ImportPr
   const save = async (dest: 'user' | 'shared') => {
     if (!result) return
     try {
-      const id = await api.saveProfile({ ...result.profile, ...meta, format: 'appmodbus-profile', version: 1, description: `Imported from ${preview.fileName}`, defaultSlaveId: 1 }, dest, '')
+      const id = await api.saveProfile({ ...result.profile, ...meta, format: 'modbus-studio-profile', version: 1, description: `Imported from ${preview.fileName}`, defaultSlaveId: 1 }, dest, '')
       onSaved(id)
     } catch (e) {
       setError(errText(e))

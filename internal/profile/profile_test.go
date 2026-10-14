@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"appmodbus/internal/datafmt"
-	"appmodbus/internal/engine"
+	"modbusstudio/internal/datafmt"
+	"modbusstudio/internal/engine"
 )
 
 const meterCSV = "\xef\xbb\xbfEnergy meter register map;;;;;\n" +

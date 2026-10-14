@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 export type Theme = 'light' | 'dark'
-const KEY = 'appmodbus.theme'
+const KEY = 'modbus-studio.theme'
 
 function initial(): Theme {
   try {
@@ -28,7 +28,7 @@ export function useTheme(): [Theme, () => void, (t: Theme) => void] {
 }
 
 export type MenuStyle = 'toolbar' | 'menubar' | 'modbuspoll'
-const MENU_KEY = 'appmodbus.menuStyle'
+const MENU_KEY = 'modbus-studio.menuStyle'
 
 /** Grouped toolbar, classic menu bar, or Modbus Poll-style menus and toolbar; stored per machine. */
 export function useMenuStyle(): [MenuStyle, (m: MenuStyle) => void] {

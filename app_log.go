@@ -12,11 +12,11 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"appmodbus/internal/applog"
-	"appmodbus/internal/engine"
-	"appmodbus/internal/settings"
-	"appmodbus/internal/simulator"
-	"appmodbus/internal/version"
+	"modbusstudio/internal/applog"
+	"modbusstudio/internal/engine"
+	"modbusstudio/internal/settings"
+	"modbusstudio/internal/simulator"
+	"modbusstudio/internal/version"
 )
 
 const eventAppLog = "applog"
@@ -75,6 +75,9 @@ func (a *App) startLog() {
 	})
 	a.logw = newLogWatcher()
 	a.log.Infof(srcApp, "Modbus Studio %s started (%s/%s)", version.Version, goruntime.GOOS, goruntime.GOARCH)
+	for _, n := range a.migrated {
+		a.log.Add(n.Level, srcApp, "%s", n.Text)
+	}
 }
 
 // observe is called for every engine event before it goes to the UI.

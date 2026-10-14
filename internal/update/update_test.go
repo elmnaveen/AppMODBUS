@@ -219,9 +219,9 @@ func tarGz(t *testing.T, name string, data []byte) string {
 
 func TestInstallLinuxBinary(t *testing.T) {
 	dir := t.TempDir()
-	exe := filepath.Join(dir, "AppMODBUS")
+	exe := filepath.Join(dir, "ModbusStudio")
 	os.WriteFile(exe, []byte("v1"), 0o755)
-	l, err := Install("linux", tarGz(t, "AppMODBUS", []byte("v2")), exe)
+	l, err := Install("linux", tarGz(t, "ModbusStudio", []byte("v2")), exe)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,7 +250,7 @@ func TestInstallLinuxBinary(t *testing.T) {
 
 func TestInstallWindowsBinary(t *testing.T) {
 	dir := t.TempDir()
-	exe := filepath.Join(dir, "AppMODBUS.exe")
+	exe := filepath.Join(dir, "ModbusStudio.exe")
 	os.WriteFile(exe, []byte("old"), 0o755)
 	pkg := filepath.Join(t.TempDir(), "ModbusStudio-windows-amd64.exe")
 	os.WriteFile(pkg, []byte("new"), 0o644)
@@ -280,12 +280,12 @@ func makeZip(t *testing.T, files map[string]string) string {
 
 func TestInstallMacBundle(t *testing.T) {
 	apps := t.TempDir()
-	exe := filepath.Join(apps, "AppMODBUS.app", "Contents", "MacOS", "AppMODBUS")
+	exe := filepath.Join(apps, "ModbusStudio.app", "Contents", "MacOS", "ModbusStudio")
 	os.MkdirAll(filepath.Dir(exe), 0o755)
 	os.WriteFile(exe, []byte("old"), 0o755)
 	pkg := makeZip(t, map[string]string{
-		"AppMODBUS.app/Contents/MacOS/AppMODBUS": "new",
-		"AppMODBUS.app/Contents/Info.plist":      "<plist/>",
+		"ModbusStudio.app/Contents/MacOS/ModbusStudio": "new",
+		"ModbusStudio.app/Contents/Info.plist":         "<plist/>",
 	})
 	l, err := Install("darwin", pkg, exe)
 	if err != nil {
@@ -294,12 +294,12 @@ func TestInstallMacBundle(t *testing.T) {
 	if b, _ := os.ReadFile(exe); string(b) != "new" {
 		t.Fatalf("got %q", b)
 	}
-	if l.Path != "open" || l.Args[1] != filepath.Join(apps, "AppMODBUS.app") {
+	if l.Path != "open" || l.Args[1] != filepath.Join(apps, "ModbusStudio.app") {
 		t.Fatalf("launch %+v", l)
 	}
 	Cleanup("darwin", exe)
 	entries, _ := os.ReadDir(apps)
-	if len(entries) != 1 || entries[0].Name() != "AppMODBUS.app" {
+	if len(entries) != 1 || entries[0].Name() != "ModbusStudio.app" {
 		t.Fatalf("leftovers: %v", entries)
 	}
 }
@@ -316,11 +316,11 @@ func TestNotWritable(t *testing.T) {
 		t.Skip("root ignores directory permissions")
 	}
 	dir := t.TempDir()
-	exe := filepath.Join(dir, "AppMODBUS")
+	exe := filepath.Join(dir, "ModbusStudio")
 	os.WriteFile(exe, []byte("v1"), 0o755)
 	os.Chmod(dir, 0o555)
 	defer os.Chmod(dir, 0o755)
-	if _, err := Install("linux", tarGz(t, "AppMODBUS", []byte("v2")), exe); err != ErrNotWritable {
+	if _, err := Install("linux", tarGz(t, "ModbusStudio", []byte("v2")), exe); err != ErrNotWritable {
 		t.Fatalf("got %v", err)
 	}
 }
@@ -351,7 +351,7 @@ func TestLinuxFlavors(t *testing.T) {
 	if rel, _ := u.Check(context.Background(), Stable); rel != nil {
 		t.Fatalf("expected no update without %s, got %+v", DebAsset, rel.Asset)
 	}
-	if DetectLinuxFlavor("/home/me/AppMODBUS", true) != LinuxPortable {
+	if DetectLinuxFlavor("/home/me/ModbusStudio", true) != LinuxPortable {
 		t.Fatal("a copy outside /opt is portable")
 	}
 }
@@ -364,16 +364,12 @@ func TestInstallDebUsesPkexec(t *testing.T) {
 	}
 }
 
-// Releases carry the package under the old name too, for v1.0.x installs;
-// current builds must pick the ModbusStudio- name.
-func TestPrefersCurrentAssetName(t *testing.T) {
+// A release that only has the pre-rename AppMODBUS- package is not offered.
+func TestAssetNames(t *testing.T) {
 	fx := newFixture(t, func(fx *fixture) []fakeRelease {
-		files := fx.signedFiles(linuxPkg, []byte("tgz"))
-		files[LegacyAssetPrefix+"linux-amd64.tar.gz"] = files[linuxPkg]
-		return []fakeRelease{{tag: "v1.1.0", files: files}}
+		return []fakeRelease{{tag: "v1.1.0", files: fx.signedFiles("AppMODBUS-linux-amd64.tar.gz", []byte("tgz"))}}
 	})
-	rel, err := fx.updater("1.0.0").Check(context.Background(), Stable)
-	if err != nil || rel == nil || rel.Asset.Name != linuxPkg {
+	if rel, err := fx.updater("1.0.0").Check(context.Background(), Stable); err != nil || rel != nil {
 		t.Fatalf("check %+v %v", rel, err)
 	}
 	for _, goos := range []string{"windows", "darwin", "linux"} {

@@ -1,4 +1,4 @@
-module appmodbus
+module modbusstudio
 
 go 1.24.7
 

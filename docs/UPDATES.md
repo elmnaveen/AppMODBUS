@@ -21,15 +21,15 @@ Modbus Studio updates itself from the GitHub Releases of `elmnaveen/AppMODBUS`.
 | Platform | Package | Install method |
 | --- | --- | --- |
 | Windows | `ModbusStudio-windows-amd64.exe` | Renames the running exe aside and puts the new one in place. If the folder isn't writable (e.g. `Program Files`), it runs the signed NSIS installer `ModbusStudio-windows-amd64-installer.exe`, which asks for admin rights. |
-| macOS | `ModbusStudio-macos-universal.zip` | Swaps the whole `AppMODBUS.app` bundle, then runs `open -n`. |
+| macOS | `ModbusStudio-macos-universal.zip` | Swaps the whole `ModbusStudio.app` bundle, then runs `open -n`. |
 | Linux (portable) | `ModbusStudio-linux-amd64.tar.gz` | Swaps the binary. |
 | Ubuntu `.deb` | `ModbusStudio-ubuntu-18.04-to-22.04-amd64.deb` or `ModbusStudio-ubuntu-24.04-amd64.deb`, matching the installed one | Runs `pkexec dpkg -i` (desktop password prompt), then restarts the app. |
 
 The old version is deleted on the next start.
 
 Settings (channel, automatic check, skipped version) are stored in
-`<user config dir>/AppMODBUS/settings.json`, for example `%AppData%\AppMODBUS` on Windows,
-`~/Library/Application Support/AppMODBUS` on macOS and `~/.config/AppMODBUS` on Linux.
+`<user config dir>/ModbusStudio/settings.json`, for example `%AppData%\ModbusStudio` on Windows,
+`~/Library/Application Support/ModbusStudio` on macOS and `~/.config/ModbusStudio` on Linux.
 
 ## One-time setup: signing key
 
@@ -87,24 +87,22 @@ anonymously, so a private repository returns "no releases found".
 
 ## Testing against a mirror
 
-Set `APPMODBUS_UPDATE_API=http://host:port` to point the updater at a GitHub-compatible
+Set `MODBUS_STUDIO_UPDATE_API=http://host:port` to point the updater at a GitHub-compatible
 API, for example a local test server. Signature verification still applies.
 
-## Product name vs. file names
+## Coming from AppMODBUS
 
-The app was renamed from AppMODBUS to **Modbus Studio**, and release packages are named `ModbusStudio-…`
-(for example `ModbusStudio-windows-amd64-installer.exe`). Builds from the rename on look for these names.
+Modbus Studio was called AppMODBUS up to v2.0.0. Everything now uses the new name: release packages
+(`ModbusStudio-…`), the executable (`ModbusStudio.exe`, `ModbusStudio.app`, `/opt/ModbusStudio`), the Debian package
+(`modbus-studio`), the Windows install folder (`C:\Program Files\Modbus Studio`) and the settings and recordings folders
+(`ModbusStudio`).
 
-Installs of v1.0.x and older look only for `AppMODBUS-…`. So the release job also attaches an identical copy of
-each package under its old name, and lists both names in the signed `checksums.txt`. Those installs update to the
-new version once, and look for the new names from then on. Once no v1.0.x installs are left, drop the copy step
-in the release job (`.github/workflows/build.yml`, "Checksums and signature").
-
-These keep the original `AppMODBUS` / `appmodbus` identifiers on purpose, because installed copies depend on them:
-
-- The executable and bundle inside the packages (`AppMODBUS.exe`, `AppMODBUS.app`), the Windows install folder and
-  uninstall entry, and the Debian package (`appmodbus`, `/opt/AppMODBUS`): upgrades replace the existing install
-  instead of adding a second one.
-- The settings and recordings folders (`AppMODBUS`), the WebView data folder and the `appmodbus.*` UI preference
-  keys: users keep their settings, recent files and recordings.
-- The `appmodbus-workspace` / `appmodbus-profile` file format IDs: existing `.mbw` workspaces and profiles still open.
+- **Updates:** AppMODBUS installs look for `AppMODBUS-…` files and do not find Modbus Studio releases. Install Modbus
+  Studio once by hand; it updates itself from then on.
+- **Installing over it:** the Windows installer offers to remove AppMODBUS (it removes it without asking in silent
+  mode), and the `modbus-studio` package replaces the `appmodbus` package.
+- **Settings and data:** on its first start Modbus Studio copies the AppMODBUS config folder (settings, session,
+  profiles, alarm history, logs) and moves the default recordings folder. If the recordings cannot be moved, they stay
+  where they are and the settings point to them. Theme and menu style are per-installation UI preferences and start at
+  their defaults.
+- **Files:** workspaces (`.mbw`) and device profiles saved by AppMODBUS open as before.

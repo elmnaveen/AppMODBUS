@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"appmodbus/internal/engine"
-	"appmodbus/internal/modbus"
-	"appmodbus/internal/simulator"
+	"modbusstudio/internal/engine"
+	"modbusstudio/internal/modbus"
+	"modbusstudio/internal/simulator"
 )
 
 func TestRoundTripThroughEngine(t *testing.T) {

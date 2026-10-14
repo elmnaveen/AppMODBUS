@@ -105,7 +105,7 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           # Installer/exe metadata wants a plain x.y.z version.
           node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('wails.json'));j.info.productVersion=process.argv[1];fs.writeFileSync('wails.json',JSON.stringify(j,null,2))" "${VERSION%%-*}"
-          PKG=appmodbus/internal/version
+          PKG=modbusstudio/internal/version
           LDFLAGS="-X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY"
           echo "Building Modbus Studio $VERSION"
           wails build -clean -platform ${{ matrix.platform }} ${{ matrix.flags }} -ldflags "$LDFLAGS"
@@ -115,7 +115,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item build/bin/AppMODBUS.exe dist/ModbusStudio-windows-amd64.exe
+          Copy-Item build/bin/ModbusStudio.exe dist/ModbusStudio-windows-amd64.exe
           $installer = Get-ChildItem build/bin -Filter *installer.exe | Select-Object -First 1
           if (-not $installer) { throw "NSIS installer was not built (is makensis installed?)" }
           Copy-Item $installer.FullName dist/ModbusStudio-windows-amd64-installer.exe
@@ -123,13 +123,13 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p dist
-          ditto -c -k --keepParent build/bin/AppMODBUS.app dist/ModbusStudio-macos-universal.zip
+          ditto -c -k --keepParent build/bin/ModbusStudio.app dist/ModbusStudio-macos-universal.zip
       - name: Package (Linux)
         if: runner.os == 'Linux'
         run: |
           mkdir -p dist
-          tar -C build/bin -czf dist/ModbusStudio-linux-amd64.tar.gz AppMODBUS
-          build/linux/package-deb.sh "$VERSION" build/bin/AppMODBUS libwebkit2gtk-4.1-0 dist/ModbusStudio-ubuntu-24.04-amd64.deb
+          tar -C build/bin -czf dist/ModbusStudio-linux-amd64.tar.gz ModbusStudio
+          build/linux/package-deb.sh "$VERSION" build/bin/ModbusStudio libwebkit2gtk-4.1-0 dist/ModbusStudio-ubuntu-24.04-amd64.deb
 
       - uses: actions/upload-artifact@v4
         with:
@@ -172,21 +172,21 @@ jobs:
                 libgtk-3-dev libwebkit2gtk-4.0-dev curl ca-certificates >/dev/null
               curl -fsSL "https://go.dev/dl/$GO_TARBALL" | tar -C /usr/local -xz
               export PATH=/usr/local/go/bin:$PATH GOFLAGS=-buildvcs=false
-              PKG=appmodbus/internal/version
+              PKG=modbusstudio/internal/version
               go build -tags desktop,production -trimpath \
                 -ldflags "-w -s -X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY" \
-                -o build/bin/AppMODBUS-legacy .
+                -o build/bin/ModbusStudio-legacy .
               chown -R "$HOST_UID:$HOST_GID" build
             '
       - name: Check glibc requirement (must run on 18.04)
         run: |
-          NEED=$(objdump -T build/bin/AppMODBUS-legacy | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1)
+          NEED=$(objdump -T build/bin/ModbusStudio-legacy | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1)
           echo "needs $NEED"
           [ "$(printf '%s\n' GLIBC_2.27 "$NEED" | sort -V | tail -1)" = GLIBC_2.27 ]
       - name: Package
         run: |
           mkdir -p dist
-          build/linux/package-deb.sh "$VERSION" build/bin/AppMODBUS-legacy libwebkit2gtk-4.0-37 dist/ModbusStudio-ubuntu-18.04-to-22.04-amd64.deb
+          build/linux/package-deb.sh "$VERSION" build/bin/ModbusStudio-legacy libwebkit2gtk-4.0-37 dist/ModbusStudio-ubuntu-18.04-to-22.04-amd64.deb
       - uses: actions/upload-artifact@v4
         with:
           name: ModbusStudio-Linux-legacy
@@ -237,10 +237,7 @@ jobs:
             echo "::error::UPDATE_SIGNING_KEY secret is not set; see docs/UPDATES.md"
             exit 1
           fi
-          # Copies under the pre-rename names let v1.0.x installs, which only
-          # look for AppMODBUS-*, update to this release (see docs/UPDATES.md).
-          (cd dist && for f in ModbusStudio-*; do cp "$f" "AppMODBUS-${f#ModbusStudio-}"; done)
-          (cd dist && sha256sum ModbusStudio-* AppMODBUS-* > checksums.txt && cat checksums.txt)
+          (cd dist && sha256sum ModbusStudio-* > checksums.txt && cat checksums.txt)
           go run ./cmd/updatekey check
           go run ./cmd/updatekey sign dist/checksums.txt
           PINNED=$(sed -n 's/^const PinnedUpdatePublicKey = "\(.*\)"$/\1/p' internal/version/version.go)

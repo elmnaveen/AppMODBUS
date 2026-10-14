@@ -11,10 +11,10 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"appmodbus/internal/modbus"
-	"appmodbus/internal/settings"
-	"appmodbus/internal/version"
-	"appmodbus/internal/workspace"
+	"modbusstudio/internal/modbus"
+	"modbusstudio/internal/settings"
+	"modbusstudio/internal/version"
+	"modbusstudio/internal/workspace"
 )
 
 const eventWorkspace = "workspace:state"

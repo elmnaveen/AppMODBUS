@@ -8,10 +8,10 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"appmodbus/internal/datafmt"
-	"appmodbus/internal/engine"
-	"appmodbus/internal/profile"
-	"appmodbus/internal/settings"
+	"modbusstudio/internal/datafmt"
+	"modbusstudio/internal/engine"
+	"modbusstudio/internal/profile"
+	"modbusstudio/internal/settings"
 )
 
 // ImportPreview is shown in the import dialog after picking a file.

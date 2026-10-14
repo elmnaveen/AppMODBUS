@@ -12,9 +12,9 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"appmodbus/internal/settings"
-	"appmodbus/internal/update"
-	"appmodbus/internal/version"
+	"modbusstudio/internal/settings"
+	"modbusstudio/internal/update"
+	"modbusstudio/internal/version"
 )
 
 // Update events sent to the frontend.
@@ -60,9 +60,9 @@ func newUpdater() *updater {
 	return &updater{
 		u: &update.Updater{
 			Linux: linux,
-			// APPMODBUS_UPDATE_API points the updater at a GitHub-compatible
+			// MODBUS_STUDIO_UPDATE_API points the updater at a GitHub-compatible
 			// mirror (used for testing); the signature check still applies.
-			APIBase:   os.Getenv("APPMODBUS_UPDATE_API"),
+			APIBase:   os.Getenv("MODBUS_STUDIO_UPDATE_API"),
 			Repo:      version.UpdateRepo,
 			Current:   version.Version,
 			PublicKey: version.UpdatePublicKey,
@@ -208,7 +208,7 @@ func (a *App) InstallUpdate() error {
 	if err != nil {
 		return fail(err)
 	}
-	dir, err := os.MkdirTemp("", "AppMODBUS-update-")
+	dir, err := os.MkdirTemp("", "ModbusStudio-update-")
 	if err != nil {
 		return fail(err)
 	}

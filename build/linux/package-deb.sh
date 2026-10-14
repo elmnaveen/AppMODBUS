@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the Modbus Studio .deb package (package name and paths keep the original appmodbus id).
+# Builds the Modbus Studio .deb package.
 #
 #   build/linux/package-deb.sh VERSION BINARY DEPENDS OUTPUT.deb
 #
@@ -15,25 +15,29 @@ chmod 755 "$ROOT"  # mktemp makes it 0700; the package root must be 0755
 trap 'rm -rf "$ROOT"' EXIT
 
 # Debian sorts "~" before anything, so 0.3.0~beta.1 < 0.3.0.
+# Conflicts/Replaces: installing this removes the old "appmodbus" package
+# (the app's name up to v2.0.0) instead of installing beside it.
 DEBVER="${VERSION/-/\~}"
 
-install -Dm755 "$BINARY" "$ROOT/opt/AppMODBUS/AppMODBUS"
+install -Dm755 "$BINARY" "$ROOT/opt/ModbusStudio/ModbusStudio"
 mkdir -p "$ROOT/usr/bin"
-ln -s /opt/AppMODBUS/AppMODBUS "$ROOT/usr/bin/appmodbus"
-install -Dm644 "$HERE/appmodbus.desktop" "$ROOT/usr/share/applications/appmodbus.desktop"
-install -Dm644 "$HERE/../appicon.png" "$ROOT/usr/share/pixmaps/appmodbus.png"
+ln -s /opt/ModbusStudio/ModbusStudio "$ROOT/usr/bin/modbus-studio"
+install -Dm644 "$HERE/modbus-studio.desktop" "$ROOT/usr/share/applications/modbus-studio.desktop"
+install -Dm644 "$HERE/../appicon.png" "$ROOT/usr/share/pixmaps/modbus-studio.png"
 
 SIZE=$(du -sk "$ROOT" | cut -f1)
 mkdir -p "$ROOT/DEBIAN"
 cat > "$ROOT/DEBIAN/control" <<CONTROL
-Package: appmodbus
+Package: modbus-studio
 Version: $DEBVER
 Section: electronics
 Priority: optional
 Architecture: amd64
 Installed-Size: $SIZE
 Depends: libgtk-3-0, $WEBKIT
-Maintainer: Modbus Studio <appmodbus@users.noreply.github.com>
+Conflicts: appmodbus
+Replaces: appmodbus
+Maintainer: Modbus Studio <elmnaveen@users.noreply.github.com>
 Homepage: https://github.com/elmnaveen/AppMODBUS
 Description: Modbus master and slave simulator
  Modbus Studio polls Modbus devices over RTU (serial), Modbus TCP/IP and RTU

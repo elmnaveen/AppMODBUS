@@ -12,8 +12,8 @@
 			"CompanyName": "{{.Info.CompanyName}}",
 			"LegalCopyright": "{{.Info.Copyright}}",
 			"Comments": "{{.Info.Comments}}",
-			"InternalName": "AppMODBUS",
-			"OriginalFilename": "AppMODBUS.exe"
+			"InternalName": "ModbusStudio",
+			"OriginalFilename": "ModbusStudio.exe"
 		}
 	}
 }
