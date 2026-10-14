@@ -19,6 +19,11 @@ type Settings struct {
 	RecentWorkspaces []string `json:"recentWorkspaces"` // most recent first
 
 	SharedProfileDir string `json:"sharedProfileDir"` // optional team profile folder
+
+	// Data management for recordings.
+	RecordingsDir string `json:"recordingsDir"` // "" = platform default
+	RetentionDays int    `json:"retentionDays"` // 0 = keep forever
+	MaxStorageMB  int    `json:"maxStorageMB"`  // 0 = no limit
 }
 
 // MaxRecent is the length of the recent workspaces list.
@@ -37,7 +42,7 @@ func (s *Settings) AddRecent(path string) {
 
 // Defaults are used when no settings file exists.
 func Defaults() Settings {
-	return Settings{UpdateChannel: "stable", AutoCheckUpdates: true, RecentWorkspaces: []string{}}
+	return Settings{UpdateChannel: "stable", AutoCheckUpdates: true, RecentWorkspaces: []string{}, RetentionDays: 30, MaxStorageMB: 2048}
 }
 
 // Store loads and saves settings to one file.

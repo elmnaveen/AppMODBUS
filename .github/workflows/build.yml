@@ -99,6 +99,8 @@ jobs:
           if [ -n "$UPDATE_SIGNING_KEY" ]; then
             go run ./cmd/updatekey check
           fi
+          # Installer/exe metadata wants a plain x.y.z version.
+          node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('wails.json'));j.info.productVersion=process.argv[1];fs.writeFileSync('wails.json',JSON.stringify(j,null,2))" "${VERSION%%-*}"
           PKG=appmodbus/internal/version
           LDFLAGS="-X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY"
           echo "Building AppMODBUS $VERSION"

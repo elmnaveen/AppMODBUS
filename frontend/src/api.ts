@@ -2,6 +2,7 @@
 import * as Go from '../wailsjs/go/main/App'
 import { EventsOn } from '../wailsjs/runtime/runtime'
 import type {
+  DataSettings, Sample, SeriesInfo,
   ImportOptions, ImportPreview, ImportResult, Profile, ProfileFolders, ProfileSummary, Tag,
   Layout, LoadResult, WorkspaceState,
   AppInfo, UpdateProgress, UpdateSettings, UpdateState,
@@ -79,6 +80,18 @@ export const api = {
   importProfileFile: (): Promise<string> => g.ImportProfileFile(),
   exportProfile: (id: string): Promise<string> => g.ExportProfile(id),
 
+  setPollRecording: (pollId: string, on: boolean): Promise<void> => g.SetPollRecording(pollId, on),
+  dataSettings: (): Promise<DataSettings> => g.GetDataSettings(),
+  setDataLimits: (retentionDays: number, maxStorageMB: number): Promise<DataSettings> => g.SetDataLimits(retentionDays, maxStorageMB),
+  chooseRecordingsFolder: (): Promise<DataSettings> => g.ChooseRecordingsFolder(),
+  resetRecordingsFolder: (): Promise<DataSettings> => g.ResetRecordingsFolder(),
+  recordedSeries: (): Promise<SeriesInfo[]> => g.RecordedSeries(),
+  querySeries: (id: string, from: number, to: number, maxPoints: number): Promise<Sample[]> => g.QuerySeries(id, from, to, maxPoints),
+  exportRecording: (ids: string[], from: number, to: number, format: 'csv' | 'xlsx'): Promise<{ path: string; rows: number }> =>
+    g.ExportRecording(ids, from, to, format),
+  deleteRecordedSeries: (ids: string[]): Promise<void> => g.DeleteRecordedSeries(ids),
+  deleteRecordedRange: (ids: string[], from: number, to: number): Promise<void> => g.DeleteRecordedRange(ids, from, to),
+
   appInfo: (): Promise<AppInfo> => g.AppInfo(),
   updateSettings: (): Promise<UpdateSettings> => g.UpdateSettings(),
   setUpdateSettings: (channel: string, autoCheck: boolean): Promise<UpdateSettings> => g.SetUpdateSettings(channel, autoCheck),
@@ -93,6 +106,7 @@ export const events = {
   onPoll: (cb: (p: Poll) => void) => EventsOn('poll:update', cb),
   onConnections: (cb: (c: ConnectionInfo[]) => void) => EventsOn('connections', cb),
   onTraffic: (cb: (t: TrafficEntry[]) => void) => EventsOn('traffic', cb),
+  onRecording: (cb: (error: string) => void) => EventsOn('recording:status', cb),
   onWorkspace: (cb: (s: WorkspaceState) => void) => EventsOn('workspace:state', cb),
   onUpdateState: (cb: (s: UpdateState) => void) => EventsOn('update:state', cb),
   onUpdateProgress: (cb: (p: UpdateProgress) => void) => EventsOn('update:progress', cb),

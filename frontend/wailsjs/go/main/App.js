@@ -18,6 +18,10 @@ export function CheckForUpdates() {
   return window['go']['main']['App']['CheckForUpdates']();
 }
 
+export function ChooseRecordingsFolder() {
+  return window['go']['main']['App']['ChooseRecordingsFolder']();
+}
+
 export function ChooseSharedProfileFolder() {
   return window['go']['main']['App']['ChooseSharedProfileFolder']();
 }
@@ -50,6 +54,14 @@ export function DeleteProfile(arg1) {
   return window['go']['main']['App']['DeleteProfile'](arg1);
 }
 
+export function DeleteRecordedRange(arg1, arg2, arg3) {
+  return window['go']['main']['App']['DeleteRecordedRange'](arg1, arg2, arg3);
+}
+
+export function DeleteRecordedSeries(arg1) {
+  return window['go']['main']['App']['DeleteRecordedSeries'](arg1);
+}
+
 export function Disconnect(arg1) {
   return window['go']['main']['App']['Disconnect'](arg1);
 }
@@ -58,8 +70,16 @@ export function ExportProfile(arg1) {
   return window['go']['main']['App']['ExportProfile'](arg1);
 }
 
+export function ExportRecording(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ExportRecording'](arg1, arg2, arg3, arg4);
+}
+
 export function Formats() {
   return window['go']['main']['App']['Formats']();
+}
+
+export function GetDataSettings() {
+  return window['go']['main']['App']['GetDataSettings']();
 }
 
 export function GetProfile(arg1) {
@@ -122,12 +142,24 @@ export function ProfileFromPoll(arg1, arg2) {
   return window['go']['main']['App']['ProfileFromPoll'](arg1, arg2);
 }
 
+export function QuerySeries(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['QuerySeries'](arg1, arg2, arg3, arg4);
+}
+
 export function ReadOnce(arg1) {
   return window['go']['main']['App']['ReadOnce'](arg1);
 }
 
+export function RecordedSeries() {
+  return window['go']['main']['App']['RecordedSeries']();
+}
+
 export function RemapSerialPort(arg1, arg2) {
   return window['go']['main']['App']['RemapSerialPort'](arg1, arg2);
+}
+
+export function ResetRecordingsFolder() {
+  return window['go']['main']['App']['ResetRecordingsFolder']();
 }
 
 export function RestoreSession() {
@@ -166,8 +198,16 @@ export function SetCharts(arg1) {
   return window['go']['main']['App']['SetCharts'](arg1);
 }
 
+export function SetDataLimits(arg1, arg2) {
+  return window['go']['main']['App']['SetDataLimits'](arg1, arg2);
+}
+
 export function SetLayout(arg1) {
   return window['go']['main']['App']['SetLayout'](arg1);
+}
+
+export function SetPollRecording(arg1, arg2) {
+  return window['go']['main']['App']['SetPollRecording'](arg1, arg2);
 }
 
 export function SetTag(arg1, arg2, arg3) {

@@ -34,6 +34,7 @@ export interface PollConfig {
   plcAddressing: boolean
   cellFormats: Record<string, string>
   tags: Record<string, Tag>
+  record: boolean
 }
 
 /** Register name and scaling: shown = raw × gain + offset. */
@@ -55,6 +56,8 @@ export interface Cell {
   name?: string
   unit?: string
   rawText?: string
+  num: number
+  hasNum: boolean
 }
 
 export interface PollState {
@@ -294,4 +297,36 @@ export interface ImportResult {
 export interface ProfileFolders {
   user: string
   shared: string
+}
+
+// ---------- recording / data management ----------
+
+export interface DataSettings {
+  folder: string
+  defaultFolder: string
+  retentionDays: number
+  maxStorageMB: number
+  usedBytes: number
+  error: string
+}
+
+export interface SeriesInfo {
+  id: string
+  connection: string
+  slaveId: number
+  function: number
+  address: number
+  format: string
+  name: string
+  unit: string
+  window: string
+  bytes: number
+  samples: number
+  first: number
+  last: number
+}
+
+export interface Sample {
+  t: number
+  v: number
 }

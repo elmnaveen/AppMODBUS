@@ -59,6 +59,13 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
           <span>SR = <b>{c.scanRateMs}</b> ms</span>
         </span>
         <span className="pw-actions">
+          <button
+            className={`btn sm rec${c.record ? ' on' : ''}`}
+            title={c.record ? 'Recording to disk — click to stop' : 'Record values to disk'}
+            onClick={() => run(() => api.setPollRecording(c.id, !c.record))}
+          >
+            <span className="rec-dot" />REC
+          </button>
           {s.running ? (
             <button className="btn sm" onClick={() => run(() => api.stopPoll(c.id))} title="Stop polling"><IconStop />Stop</button>
           ) : (
