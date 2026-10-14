@@ -1,8 +1,10 @@
 import { memo, useRef, useState } from 'react'
 import { api, errText } from '../api'
-import { fc2, isBitFunction, isWritable, type Cell, type FormatInfo, type Poll } from '../types'
+import { Chart } from '../charts/Chart'
+import { addSeries, defaultInline, MAX_SERIES, resolveSeries, type ChartSeries, type InlineChart } from '../charts/model'
+import { fc2, isBitFunction, isWritable, type Cell, type ConnectionInfo, type FormatInfo, type Poll } from '../types'
 import { ContextMenu } from './ContextMenu'
-import { IconGear, IconOnce, IconPlay, IconStop, IconX } from './Icons'
+import { IconChart, IconGear, IconOnce, IconPlay, IconStop, IconX } from './Icons'
 
 const ROWS = 10
 
@@ -17,9 +19,20 @@ interface Props {
   onWrite: (cell: Cell) => void
   onTag: (cell: Cell) => void
   onError: (msg: string) => void
+  onInfo: (msg: string) => void
+  // Charts
+  theme: 'light' | 'dark'
+  connections: ConnectionInfo[]
+  inline?: InlineChart
+  chartTargets: { id: string; name: string; full: boolean }[]
+  onInline: (pollId: string, c: InlineChart) => void
+  onChartCell: (pollId: string, address: number, target: string) => void
 }
 
-function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdit, onClose, onWrite, onTag, onError }: Props) {
+function PollWindowImpl({
+  poll, connectionName, formats, focused, onFocus, onEdit, onClose, onWrite, onTag, onError, onInfo,
+  theme, connections, inline, chartTargets, onInline, onChartCell,
+}: Props) {
   const { config: c, state: s } = poll
   const [sel, setSel] = useState<number | null>(null)
   const [menu, setMenu] = useState<{ x: number; y: number; cell: Cell } | null>(null)
@@ -43,11 +56,23 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
   const named = s.cells.some((x) => x.name)
   const hasUnits = s.cells.some((x) => x.unit)
 
+  const chartOpen = !!inline?.open
+  const toggleChart = () => onInline(c.id, inline ? { ...inline, open: !inline.open } : defaultInline(poll))
+  const unitOf = (x: ChartSeries) => s.cells.find((cell) => cell.address === x.address)?.unit ?? ''
+  const inInline = (address: number) => !!inline?.series.some((x) => x.address === address)
+  const toggleInline = (cell: Cell) => {
+    const cur = inline ?? { open: true, rangeSec: 300, series: [] }
+    const series = inInline(cell.address)
+      ? cur.series.filter((x) => x.address !== cell.address)
+      : addSeries(cur.series, c.id, cell.address, unitOf, cell.unit ?? '')
+    onInline(c.id, { ...cur, open: true, series })
+  }
+
   const columns: Cell[][] = []
   for (let i = 0; i < s.cells.length; i += ROWS) columns.push(s.cells.slice(i, i + ROWS))
 
   return (
-    <div className={`pw${focused ? ' focused' : ''}`} onMouseDown={onFocus}>
+    <div className={`pw${focused ? ' focused' : ''}${chartOpen ? ' with-chart' : ''}`} onMouseDown={onFocus}>
       <div className="pw-head">
         <span className="pw-title">{c.name}</span>
         <span className={`pill${s.running ? ' run' : ''}`}>{s.running ? 'Polling' : 'Stopped'}</span>
@@ -65,6 +90,9 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
             onClick={() => run(() => api.setPollRecording(c.id, !c.record))}
           >
             <span className="rec-dot" />REC
+          </button>
+          <button className={`btn sm${chartOpen ? ' on' : ''}`} onClick={toggleChart} title={chartOpen ? 'Hide the chart' : 'Chart this window'}>
+            <IconChart />Chart
           </button>
           {s.running ? (
             <button className="btn sm" onClick={() => run(() => api.stopPoll(c.id))} title="Stop polling"><IconStop />Stop</button>
@@ -134,12 +162,43 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
           ))}
         </div>
       </div>
+      {chartOpen && inline && (
+        <div className="pw-chart">
+          <Chart
+            compact
+            series={resolveSeries(inline.series, { [c.id]: poll }, connections, false)}
+            rangeSec={inline.rangeSec}
+            onRange={(rangeSec) => onInline(c.id, { ...inline, rangeSec })}
+            theme={theme}
+            title={c.name}
+            onAxis={(i) => onInline(c.id, { ...inline, series: inline.series.map((x, j) => (j === i ? { ...x, axis: x.axis === 'L' ? 'R' : 'L' } : x)) })}
+            onRemove={(i) => onInline(c.id, { ...inline, series: inline.series.filter((_, j) => j !== i) })}
+            onError={onError}
+            onInfo={onInfo}
+            empty="Right-click a value and choose “Show in window chart”."
+          />
+        </div>
+      )}
       {menu && (
         <ContextMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
           <button onClick={() => { setMenu(null); onTag(menu.cell) }}>{menu.cell.name ? `Edit tag “${menu.cell.name}”…` : 'Name / scale this register…'}</button>
           {isWritable(c.function) && (
             <button onClick={() => { setMenu(null); onWrite(menu.cell) }}>Write value…</button>
           )}
+          <hr />
+          <div className="grp">Chart</div>
+          <button
+            disabled={!inInline(menu.cell.address) && (inline?.series.length ?? 0) >= MAX_SERIES}
+            onClick={() => { setMenu(null); toggleInline(menu.cell) }}
+          >
+            {inInline(menu.cell.address) ? 'Remove from window chart' : 'Show in window chart'}
+          </button>
+          {chartTargets.map((t) => (
+            <button key={t.id} disabled={t.full} onClick={() => { setMenu(null); onChartCell(c.id, menu.cell.address, t.id) }}>
+              Add to “{t.name}”
+            </button>
+          ))}
+          <button onClick={() => { setMenu(null); onChartCell(c.id, menu.cell.address, 'new') }}>Add to new chart</button>
           {!bits && <hr />}
           {!bits && ['16-bit', '32-bit', '64-bit'].map((g) => (
             <div key={g}>

@@ -86,6 +86,10 @@ export const api = {
   chooseRecordingsFolder: (): Promise<DataSettings> => g.ChooseRecordingsFolder(),
   resetRecordingsFolder: (): Promise<DataSettings> => g.ResetRecordingsFolder(),
   recordedSeries: (): Promise<SeriesInfo[]> => g.RecordedSeries(),
+  seriesIDs: (refs: { connection: string; slaveId: number; function: number; address: number; format: string }[]): Promise<string[]> =>
+    g.SeriesIDs(refs),
+  saveExportFile: (title: string, name: string, filterName: string, pattern: string, data: string, binary: boolean): Promise<string> =>
+    g.SaveExportFile(title, name, filterName, pattern, data, binary),
   querySeries: (id: string, from: number, to: number, maxPoints: number): Promise<Sample[]> => g.QuerySeries(id, from, to, maxPoints),
   exportRecording: (ids: string[], from: number, to: number, format: 'csv' | 'xlsx'): Promise<{ path: string; rows: number }> =>
     g.ExportRecording(ids, from, to, format),

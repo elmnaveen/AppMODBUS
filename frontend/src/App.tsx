@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, errText, events } from './api'
 import { ConnectionsDialog, blankConnection } from './components/ConnectionsDialog'
 import {
-  IconBolt, IconBook, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
+  IconBolt, IconBook, IconChart, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
 } from './components/Icons'
 import { PollDialog } from './components/PollDialog'
 import { PollWindow } from './components/PollWindow'
@@ -15,6 +15,12 @@ import { TagDialog } from './components/TagDialog'
 import { FileMenu, PortRemapDialog, UnsavedDialog } from './components/Workspace'
 import { ManualWriteDialog, WriteCellDialog } from './components/WriteDialogs'
 import { useTheme } from './theme'
+import { AddSeriesDialog, ChartTab } from './charts/ChartTab'
+import { live } from './charts/live'
+import {
+  addSeries, emptyCharts, MAX_SERIES, newChartId, parseCharts, pruneCharts,
+  type ChartDef, type ChartSeries, type ChartsDoc, type InlineChart,
+} from './charts/model'
 import { fc2, type AppInfo, type Cell, type LoadResult, type WorkspaceState, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
 
 type Dialog =
@@ -26,6 +32,7 @@ type Dialog =
   | { kind: 'tag'; pollId: string; cell: Cell }
   | { kind: 'profiles' }
   | { kind: 'data' }
+  | { kind: 'addSeries'; chartId: string }
   | null
 
 export default function App() {
@@ -47,6 +54,8 @@ export default function App() {
   const [restored, setRestored] = useState(false)
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
   const [remap, setRemap] = useState<LoadResult | null>(null)
+  const [charts, setCharts] = useState<ChartsDoc>(emptyCharts)
+  const sentCharts = useRef(JSON.stringify(emptyCharts()))
 
   const notify = useCallback((msg: string, error = true) => {
     setToast({ msg, error })
@@ -58,7 +67,10 @@ export default function App() {
     api.formats().then(setFormats)
     api.restoreSession().then(applyLoad).finally(() => setRestored(true))
     const offs = [
-      events.onPoll((p) => setPolls((cur) => ({ ...cur, [p.config.id]: p }))),
+      events.onPoll((p) => {
+        live.ingest(p)
+        setPolls((cur) => ({ ...cur, [p.config.id]: p }))
+      }),
       events.onConnections(setConnections),
       events.onWorkspace(setWs),
     ]
@@ -76,7 +88,11 @@ export default function App() {
     setView(r.layout.view === 'tile' ? 'tile' : 'tabs')
     setShowTraffic(r.layout.showTraffic)
     setShowSim(r.layout.showSimulator)
-    setActive(ps.some((p) => p.config.id === r.layout.activeId) ? r.layout.activeId : ps[0]?.config.id ?? '')
+    const doc = pruneCharts(parseCharts(r.charts), new Set(ps.map((p) => p.config.id)))
+    sentCharts.current = JSON.stringify(doc)
+    setCharts(doc)
+    const ids = [...ps.map((p) => p.config.id), ...doc.tabs.map((t) => t.id)]
+    setActive(ids.includes(r.layout.activeId) ? r.layout.activeId : ids[0] ?? '')
     if (r.warnings.length) notify(`Some items could not be loaded: ${r.warnings.join('; ')}`)
     if (r.missingPorts.length) setRemap(r)
   }
@@ -85,6 +101,15 @@ export default function App() {
   useEffect(() => {
     if (restored) api.setLayout({ view, activeId: active, showTraffic, showSimulator: showSim })
   }, [restored, view, active, showTraffic, showSim])
+
+  // So are the charts.
+  useEffect(() => {
+    const json = JSON.stringify(charts)
+    if (restored && json !== sentCharts.current) {
+      sentCharts.current = json
+      api.setCharts(charts)
+    }
+  }, [restored, charts])
 
   // Runs action, first offering to save unsaved changes.
   const guard = (action: () => Promise<void>) => {
@@ -120,6 +145,8 @@ export default function App() {
   }
   const closePoll = async (id: string) => {
     await api.deletePoll(id)
+    live.drop(id)
+    setCharts((cur) => pruneCharts(cur, new Set(order.filter((x) => x !== id))))
     setPolls((cur) => {
       const next = { ...cur }
       delete next[id]
@@ -127,10 +154,52 @@ export default function App() {
     })
     setOrder((o) => {
       const next = o.filter((x) => x !== id)
-      if (active === id) setActive(next[Math.max(0, o.indexOf(id) - 1)] ?? '')
+      if (active === id) setActive(next[Math.max(0, o.indexOf(id) - 1)] ?? charts.tabs[0]?.id ?? '')
       return next
     })
   }
+
+  // ---- charts ----
+  const unitOf = useCallback((s: ChartSeries) => polls[s.pollId]?.state.cells.find((c) => c.address === s.address)?.unit ?? '', [polls])
+  const newChart = (series: ChartSeries[] = []): ChartDef => {
+    const used = new Set(charts.tabs.map((t) => t.name))
+    let n = charts.tabs.length + 1
+    while (used.has(`Chart ${n}`)) n++
+    return { id: newChartId(), name: `Chart ${n}`, rangeSec: 300, series }
+  }
+  const openNewChart = () => {
+    const c = newChart()
+    setCharts((cur) => ({ ...cur, tabs: [...cur.tabs, c] }))
+    setActive(c.id)
+    setDialog({ kind: 'addSeries', chartId: c.id })
+  }
+  const updateChart = useCallback((c: ChartDef) => setCharts((cur) => ({ ...cur, tabs: cur.tabs.map((t) => (t.id === c.id ? c : t)) })), [])
+  const closeChart = (id: string) => {
+    const i = charts.tabs.findIndex((t) => t.id === id)
+    const rest = charts.tabs.filter((t) => t.id !== id)
+    setCharts((cur) => ({ ...cur, tabs: cur.tabs.filter((t) => t.id !== id) }))
+    if (active === id) setActive(rest[Math.max(0, i - 1)]?.id ?? order[order.length - 1] ?? '')
+  }
+  const onInline = useCallback((pollId: string, c: InlineChart) => setCharts((cur) => ({ ...cur, inline: { ...cur.inline, [pollId]: c } })), [])
+  const onChartCell = useCallback((pollId: string, address: number, target: string) => {
+    const unit = polls[pollId]?.state.cells.find((c) => c.address === address)?.unit ?? ''
+    if (target === 'new') {
+      const c = newChart(addSeries([], pollId, address, unitOf, unit))
+      setCharts((cur) => ({ ...cur, tabs: [...cur.tabs, c] }))
+      setActive(c.id)
+      setView('tabs')
+      return
+    }
+    setCharts((cur) => ({
+      ...cur,
+      tabs: cur.tabs.map((t) => (t.id === target ? { ...t, series: addSeries(t.series, pollId, address, unitOf, unit) } : t)),
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [polls, charts.tabs, unitOf])
+  const chartTargets = useMemo(
+    () => charts.tabs.map((t) => ({ id: t.id, name: t.name, full: t.series.length >= MAX_SERIES })),
+    [charts.tabs],
+  )
 
   // One click demo: simulator on :5020 + connection + two poll windows.
   const quickStart = async () => {
@@ -161,9 +230,11 @@ export default function App() {
 
   const connName = (id: string) => connections.find((c) => c.id === id)?.name ?? ''
   const activePoll = polls[active]
+  const activeChart = charts.tabs.find((t) => t.id === active)
   const running = order.filter((id) => polls[id]?.state.running).length
   const onError = useCallback((m: string) => notify(m), [notify])
   const onSimStatus = useCallback((s: SimStatus) => setSim(s), [])
+  const onInfo = useCallback((m: string) => notify(m, false), [notify])
 
   const renderPoll = (id: string) => {
     const p = polls[id]
@@ -181,9 +252,34 @@ export default function App() {
         onWrite={(cell) => setDialog({ kind: 'writeCell', pollId: id, cell })}
         onTag={(cell) => setDialog({ kind: 'tag', pollId: id, cell })}
         onError={onError}
+        onInfo={onInfo}
+        theme={theme}
+        connections={connections}
+        inline={charts.inline[id]}
+        chartTargets={chartTargets}
+        onInline={onInline}
+        onChartCell={onChartCell}
       />
     )
   }
+
+  const renderChart = (c: ChartDef) => (
+    <ChartTab
+      key={c.id}
+      chart={c}
+      polls={polls}
+      connections={connections}
+      theme={theme}
+      focused={view === 'tile' && c.id === active}
+      onFocus={() => setActive(c.id)}
+      onChange={updateChart}
+      onAdd={() => setDialog({ kind: 'addSeries', chartId: c.id })}
+      onClose={() => closeChart(c.id)}
+      onError={onError}
+      onInfo={onInfo}
+    />
+  )
+  const hasWindows = order.length + charts.tabs.length > 0
 
   return (
     <div className="app">
@@ -197,6 +293,7 @@ export default function App() {
         <span className="tb-sep" />
         <button className="btn" onClick={() => setDialog({ kind: 'connections' })}><IconPlug />Connection</button>
         <button className="btn" onClick={() => setDialog({ kind: 'poll' })}><IconPlus />New poll</button>
+        <button className="btn" onClick={openNewChart}><IconChart />New chart</button>
         <span className="tb-sep" />
         <button className="btn" disabled={order.length === 0} onClick={() => api.startAll().catch((e) => notify(errText(e)))}><IconPlay />Start all</button>
         <button className="btn" disabled={running === 0} onClick={() => api.stopAll()}><IconStop />Stop all</button>
@@ -230,7 +327,7 @@ export default function App() {
 
       <div className="main">
         <section className="workspace">
-          {order.length > 0 && view === 'tabs' && (
+          {hasWindows && view === 'tabs' && (
             <nav className="tabs">
               {order.map((id) => {
                 const p = polls[id]
@@ -244,11 +341,19 @@ export default function App() {
                   </div>
                 )
               })}
+              {charts.tabs.map((c) => (
+                <div key={c.id} className={`tab chart-tab${c.id === active ? ' active' : ''}`} onClick={() => setActive(c.id)}>
+                  <IconChart />
+                  <span>{c.name}</span>
+                  <span className="muted mono" style={{ fontSize: 11 }}>{c.series.length}</span>
+                  <button className="btn sm icon x" onClick={(e) => { e.stopPropagation(); closeChart(c.id) }} title="Close"><IconX /></button>
+                </div>
+              ))}
               <button className="btn sm icon" style={{ marginBottom: 4 }} onClick={() => setDialog({ kind: 'poll' })} title="New poll window"><IconPlus /></button>
             </nav>
           )}
-          <div className={`content${view === 'tile' && order.length ? ' tile' : ''}`}>
-            {order.length === 0 ? (
+          <div className={`content${view === 'tile' && hasWindows ? ' tile' : ''}`}>
+            {!hasWindows ? (
               <div className="empty">
                 <div className="brand-mark" style={{ width: 44, height: 44, fontSize: 16, margin: '0 auto 14px', borderRadius: 10 }}>MB</div>
                 <h2>Welcome to AppMODBUS</h2>
@@ -264,9 +369,12 @@ export default function App() {
                 </div>
               </div>
             ) : view === 'tabs' ? (
-              activePoll && renderPoll(active)
+              activeChart ? renderChart(activeChart) : activePoll && renderPoll(active)
             ) : (
-              order.map(renderPoll)
+              <>
+                {order.map(renderPoll)}
+                {charts.tabs.map(renderChart)}
+              </>
             )}
           </div>
         </section>
@@ -326,6 +434,16 @@ export default function App() {
           onApplied={(created) => { created.forEach(addPoll); if (created[0]) setActive(created[0].config.id) }}
           onClose={() => setDialog(null)}
           onError={onError}
+        />
+      )}
+      {dialog?.kind === 'addSeries' && charts.tabs.some((t) => t.id === dialog.chartId) && (
+        <AddSeriesDialog
+          chart={charts.tabs.find((t) => t.id === dialog.chartId)!}
+          polls={polls}
+          order={order}
+          initialPollId={polls[active] ? active : undefined}
+          onSave={(series) => updateChart({ ...charts.tabs.find((t) => t.id === dialog.chartId)!, series })}
+          onClose={() => setDialog(null)}
         />
       )}
       {dialog?.kind === 'data' && <DataDialog onClose={() => setDialog(null)} onInfo={(m) => notify(m, false)} />}

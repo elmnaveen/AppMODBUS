@@ -170,6 +170,10 @@ export function SaveConnection(arg1) {
   return window['go']['main']['App']['SaveConnection'](arg1);
 }
 
+export function SaveExportFile(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['SaveExportFile'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
 export function SaveProfile(arg1, arg2, arg3) {
   return window['go']['main']['App']['SaveProfile'](arg1, arg2, arg3);
 }
@@ -188,6 +192,10 @@ export function SaveWorkspaceAs() {
 
 export function SerialPorts() {
   return window['go']['main']['App']['SerialPorts']();
+}
+
+export function SeriesIDs(arg1) {
+  return window['go']['main']['App']['SeriesIDs'](arg1);
 }
 
 export function SetCellFormat(arg1, arg2, arg3) {

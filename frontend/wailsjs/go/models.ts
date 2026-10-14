@@ -530,6 +530,26 @@ export namespace main {
 	        this.shared = source["shared"];
 	    }
 	}
+	export class SeriesRef {
+	    connection: string;
+	    slaveId: number;
+	    function: number;
+	    address: number;
+	    format: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SeriesRef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connection = source["connection"];
+	        this.slaveId = source["slaveId"];
+	        this.function = source["function"];
+	        this.address = source["address"];
+	        this.format = source["format"];
+	    }
+	}
 	export class UpdateState {
 	    status: string;
 	    release?: update.Release;

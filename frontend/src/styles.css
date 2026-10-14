@@ -430,3 +430,55 @@ input:disabled, select:disabled { background: var(--panel-2); color: var(--muted
 .data-list tbody tr:not(.grp-row) { cursor: pointer; }
 .data-actions { display: flex; gap: 6px; align-items: center; margin-top: 10px; }
 .btn.danger-fill { background: var(--err); border-color: var(--err); color: #fff; }
+
+/* ---------- charts ---------- */
+.tab.chart-tab svg { width: 15px; height: 15px; flex: none; }
+.content.tile .pw.with-chart, .content.tile .chart-pw { grid-row: span 2; }
+.pw-chart { flex: 0 0 auto; height: 48%; min-height: 200px; border-top: 1px solid var(--border); display: flex; min-width: 0; }
+.chart { flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.chart-bar { display: flex; align-items: center; gap: 6px; padding: 6px 10px; flex-wrap: wrap; }
+.chart-bar .seg button { padding: 3px 9px; font-size: 12px; }
+.chart.compact .chart-bar { padding: 4px 8px; }
+.chart.compact .chart-bar .seg button { padding: 2px 7px; font-size: 11.5px; }
+.chart-plot { flex: 1; min-height: 80px; position: relative; overflow: hidden; margin: 0 6px; }
+.chart-plot .uplot { position: absolute; inset: 0; }
+.chart-plot .u-select { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.chart-plot .u-cursor-x { border-right: 1px dashed var(--faint) !important; }
+.chart-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--muted); text-align: center; padding: 16px; }
+.chart-empty p { margin: 0; max-width: 420px; }
+.chart-tip {
+  position: absolute; z-index: 10; pointer-events: none; min-width: 160px;
+  background: var(--panel); border: 1px solid var(--border-strong); border-radius: 7px; box-shadow: var(--shadow);
+  padding: 6px 8px; font-size: 12px; color: var(--text); white-space: nowrap;
+}
+.chart-tip .tt-t { color: var(--muted); margin-bottom: 4px; font-size: 11.5px; }
+.chart-tip .tt-row { display: flex; align-items: center; gap: 6px; line-height: 1.6; }
+.chart-tip .tt-sw { width: 12px; height: 2px; border-radius: 1px; flex: none; }
+.chart-tip .tt-l { flex: 1; color: var(--muted); padding-right: 10px; }
+.chart-tip b { font-family: var(--mono); font-weight: 600; }
+.chart-tip .tt-u { color: var(--muted); min-width: 14px; }
+.chart-legend-wrap { margin-top: 4px; }
+.chart-legend { width: 100%; border-collapse: collapse; font-size: 12px; }
+.chart-legend th { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); text-align: right; padding: 3px 8px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--panel-2); }
+.chart-legend td { padding: 2px 8px; text-align: right; font-family: var(--mono); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.chart-legend tr:last-child td { border-bottom: none; }
+.chart-legend .l { text-align: left; }
+.chart-legend td.name { font-family: var(--sans); width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chart-legend tr.missing td { opacity: .5; }
+.chart-legend .sw { display: inline-block; width: 16px; height: 3px; border-radius: 2px; vertical-align: middle; }
+.chart-legend .x { opacity: .6; height: 20px; }
+.chart.compact .chart-legend td { padding: 1px 8px; }
+.chart-legend-wrap { flex: none; max-height: 40%; overflow: auto; }
+.axis-btn { border: 1px solid var(--border); background: var(--panel); border-radius: 5px; padding: 0 6px; cursor: pointer; font-size: 11.5px; color: var(--text); }
+.axis-btn:hover { border-color: var(--accent); }
+.title-input { font-weight: 600; padding: 2px 6px; width: 220px; }
+.pick-list { border: 1px solid var(--border); border-radius: 8px; max-height: 46vh; overflow: auto; }
+.pick { display: grid; grid-template-columns: 22px 56px 1fr auto; gap: 8px; align-items: center; padding: 4px 10px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.pick:last-child { border-bottom: none; }
+.pick:hover { background: var(--cell-hover); }
+.pick.dim { opacity: .55; cursor: default; }
+.pick .a { color: var(--faint); }
+.pick .v { color: var(--muted); }
+.ax-unit { position: absolute; top: 2px; z-index: 2; font-size: 11px; color: var(--muted); pointer-events: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-unit.l { left: 6px; }
+.ax-unit.r { right: 4px; }

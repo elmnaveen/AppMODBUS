@@ -93,6 +93,8 @@ export function RestoreSession():Promise<main.LoadResult>;
 
 export function SaveConnection(arg1:engine.ConnectionConfig):Promise<engine.ConnectionInfo>;
 
+export function SaveExportFile(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<string>;
+
 export function SaveProfile(arg1:profile.Profile,arg2:string,arg3:string):Promise<string>;
 
 export function SaveTrafficLog(arg1:string):Promise<string>;
@@ -102,6 +104,8 @@ export function SaveWorkspace():Promise<string>;
 export function SaveWorkspaceAs():Promise<string>;
 
 export function SerialPorts():Promise<Array<string>>;
+
+export function SeriesIDs(arg1:Array<main.SeriesRef>):Promise<Array<string>>;
 
 export function SetCellFormat(arg1:string,arg2:number,arg3:string):Promise<void>;
 

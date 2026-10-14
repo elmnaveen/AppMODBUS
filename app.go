@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"os"
 	"sync/atomic"
 
@@ -125,6 +126,27 @@ func (a *App) SaveTrafficLog(text string) (string, error) {
 		return "", err
 	}
 	return path, os.WriteFile(path, []byte(text), 0o644)
+}
+
+// SaveExportFile asks for a file name and writes data to it. data is
+// base64 when binary is set (e.g. a PNG image), otherwise text.
+func (a *App) SaveExportFile(title, defaultName, filterName, pattern, data string, binary bool) (string, error) {
+	b := []byte(data)
+	if binary {
+		var err error
+		if b, err = base64.StdEncoding.DecodeString(data); err != nil {
+			return "", err
+		}
+	}
+	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           title,
+		DefaultFilename: defaultName,
+		Filters:         []runtime.FileFilter{{DisplayName: filterName, Pattern: pattern}},
+	})
+	if err != nil || path == "" {
+		return "", err
+	}
+	return path, os.WriteFile(path, b, 0o644)
 }
 
 // ---- simulator ----
