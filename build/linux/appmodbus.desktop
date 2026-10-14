@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=AppMODBUS
+GenericName=Modbus master
+Comment=Poll and test Modbus RTU/TCP devices
+Exec=appmodbus
+Icon=appmodbus
+Terminal=false
+Categories=Development;Electronics;Engineering;
+Keywords=modbus;rtu;tcp;plc;scada;rs485;
+StartupWMClass=AppMODBUS

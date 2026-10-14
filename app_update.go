@@ -53,8 +53,13 @@ type updater struct {
 }
 
 func newUpdater() *updater {
+	linux := update.LinuxPortable
+	if exe, err := executablePath(); err == nil && goruntime.GOOS == "linux" {
+		linux = update.DetectLinuxFlavor(exe, version.WebKit41)
+	}
 	return &updater{
 		u: &update.Updater{
+			Linux: linux,
 			// APPMODBUS_UPDATE_API points the updater at a GitHub-compatible
 			// mirror (used for testing); the signature check still applies.
 			APIBase:   os.Getenv("APPMODBUS_UPDATE_API"),

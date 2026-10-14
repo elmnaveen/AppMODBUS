@@ -22,7 +22,8 @@ AppMODBUS updates itself from the GitHub Releases of `elmnaveen/AppMODBUS`.
 | --- | --- | --- |
 | Windows | `AppMODBUS-windows-amd64.exe` | Renames the running exe aside and puts the new one in place. If the folder isn't writable (e.g. `Program Files`), it runs the signed NSIS installer `AppMODBUS-windows-amd64-installer.exe`, which asks for admin rights. |
 | macOS | `AppMODBUS-macos-universal.zip` | Swaps the whole `AppMODBUS.app` bundle, then runs `open -n`. |
-| Linux | `AppMODBUS-linux-amd64.tar.gz` | Swaps the binary. |
+| Linux (portable) | `AppMODBUS-linux-amd64.tar.gz` | Swaps the binary. |
+| Ubuntu `.deb` | `AppMODBUS-ubuntu-18.04-to-22.04-amd64.deb` or `AppMODBUS-ubuntu-24.04-amd64.deb`, matching the installed one | Runs `pkexec dpkg -i` (desktop password prompt), then restarts the app. |
 
 The old version is deleted on the next start.
 

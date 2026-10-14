@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -181,7 +183,7 @@ func openSerial(cfg Config) (stream, error) {
 	}
 	p, err := serial.Open(cfg.SerialPort, mode)
 	if err != nil {
-		return nil, fmt.Errorf("open %s: %w", cfg.SerialPort, err)
+		return nil, fmt.Errorf("open %s: %w%s", cfg.SerialPort, err, SerialPermissionHint(err))
 	}
 	return &serialStream{p}, nil
 }
@@ -206,6 +208,15 @@ func (s *serialStream) readUntil(b []byte, d time.Time) (int, error) {
 		return 0, ErrTimeout
 	}
 	return n, nil
+}
+
+// SerialPermissionHint explains how to get access to serial ports on Linux
+// when opening one was refused.
+func SerialPermissionHint(err error) string {
+	if runtime.GOOS != "linux" || err == nil || !strings.Contains(strings.ToLower(err.Error()), "permission") {
+		return ""
+	}
+	return " (add your user to the dialout group: sudo usermod -aG dialout $USER, then log out and in again)"
 }
 
 // ListSerialPorts returns the serial ports present on this machine.

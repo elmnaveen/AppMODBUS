@@ -120,7 +120,7 @@ func (s *Server) Start(cfg Config) error {
 		}
 		p, err := serial.Open(cfg.SerialPort, mode)
 		if err != nil {
-			return fmt.Errorf("open %s: %w", cfg.SerialPort, err)
+			return fmt.Errorf("open %s: %w%s", cfg.SerialPort, err, modbus.SerialPermissionHint(err))
 		}
 		s.closers = append(s.closers, p)
 		s.addr = cfg.SerialPort

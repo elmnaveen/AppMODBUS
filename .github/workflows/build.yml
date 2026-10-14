@@ -99,6 +99,7 @@ jobs:
           if [ -n "$UPDATE_SIGNING_KEY" ]; then
             go run ./cmd/updatekey check
           fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           # Installer/exe metadata wants a plain x.y.z version.
           node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('wails.json'));j.info.productVersion=process.argv[1];fs.writeFileSync('wails.json',JSON.stringify(j,null,2))" "${VERSION%%-*}"
           PKG=appmodbus/internal/version
@@ -125,10 +126,66 @@ jobs:
         run: |
           mkdir -p dist
           tar -C build/bin -czf dist/AppMODBUS-linux-amd64.tar.gz AppMODBUS
+          build/linux/package-deb.sh "$VERSION" build/bin/AppMODBUS libwebkit2gtk-4.1-0 dist/AppMODBUS-ubuntu-24.04-amd64.deb
 
       - uses: actions/upload-artifact@v4
         with:
           name: AppMODBUS-${{ runner.os }}
+          path: dist/*
+
+  build-linux-legacy:
+    # Ubuntu 18.04-22.04 ship WebKitGTK 4.0 and older glibc, so this build
+    # is compiled inside an Ubuntu 18.04 container: a binary linked there
+    # runs on every later release. (Node 22 cannot run on 18.04, so the
+    # frontend is built on the host first and embedded by `go build`.)
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ -n "$INPUT_VERSION" ]]; then VERSION="${INPUT_VERSION#v}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then VERSION="${GITHUB_REF_NAME#v}"
+          else VERSION="0.0.0-dev.${GITHUB_RUN_NUMBER}"; fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+      - name: Frontend
+        working-directory: frontend
+        run: npm ci && npm run build
+      - name: Build in Ubuntu 18.04
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            -e VERSION -e GITHUB_SHA -e GITHUB_REPOSITORY -e GO_TARBALL=go1.24.13.linux-amd64.tar.gz \
+            -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+            ubuntu:18.04 bash -euc '
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends build-essential pkg-config \
+                libgtk-3-dev libwebkit2gtk-4.0-dev curl ca-certificates >/dev/null
+              curl -fsSL "https://go.dev/dl/$GO_TARBALL" | tar -C /usr/local -xz
+              export PATH=/usr/local/go/bin:$PATH GOFLAGS=-buildvcs=false
+              PKG=appmodbus/internal/version
+              go build -tags desktop,production -trimpath \
+                -ldflags "-w -s -X $PKG.Version=$VERSION -X $PKG.Commit=$GITHUB_SHA -X $PKG.UpdateRepo=$GITHUB_REPOSITORY" \
+                -o build/bin/AppMODBUS-legacy .
+              chown -R "$HOST_UID:$HOST_GID" build
+            '
+      - name: Check glibc requirement (must run on 18.04)
+        run: |
+          NEED=$(objdump -T build/bin/AppMODBUS-legacy | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1)
+          echo "needs $NEED"
+          [ "$(printf '%s\n' GLIBC_2.27 "$NEED" | sort -V | tail -1)" = GLIBC_2.27 ]
+      - name: Package
+        run: |
+          mkdir -p dist
+          build/linux/package-deb.sh "$VERSION" build/bin/AppMODBUS-legacy libwebkit2gtk-4.0-37 dist/AppMODBUS-ubuntu-18.04-to-22.04-amd64.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AppMODBUS-Linux-legacy
           path: dist/*
 
   release:
@@ -136,7 +193,7 @@ jobs:
     # only installs packages listed in a checksums.txt whose Ed25519
     # signature matches the public key compiled into the running build.
     if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.version != '')
-    needs: build
+    needs: [build, build-linux-legacy]
     runs-on: ubuntu-24.04
     steps:
       - name: Release tag

@@ -42,6 +42,25 @@ never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time
 3. To use real hardware, open **Connection**, pick a type (serial port or IP address), then add a window
    with **New poll**.
 
+## Installing
+
+Download from the [latest release](https://github.com/elmnaveen/AppMODBUS/releases/latest):
+
+| System | File |
+| --- | --- |
+| Windows 10/11 | `AppMODBUS-windows-amd64-installer.exe` (or the portable `AppMODBUS-windows-amd64.exe`) |
+| macOS | `AppMODBUS-macos-universal.zip` (Intel and Apple Silicon) |
+| Ubuntu 18.04, 20.04, 22.04 | `AppMODBUS-ubuntu-18.04-to-22.04-amd64.deb` |
+| Ubuntu 24.04 and newer | `AppMODBUS-ubuntu-24.04-amd64.deb` |
+| Other Linux (portable) | `AppMODBUS-linux-amd64.tar.gz` (needs WebKitGTK 4.1) |
+
+On Ubuntu, double-click the `.deb` or run `sudo apt install ./AppMODBUS-ubuntu-*.deb`. apt installs the
+WebKitGTK dependency, and AppMODBUS appears in the app menu. To use serial ports, add yourself to the
+`dialout` group once: `sudo usermod -aG dialout $USER`, then log out and in again.
+
+Installed copies update themselves (see [docs/UPDATES.md](docs/UPDATES.md)). A `.deb` installation is
+updated with the new `.deb` after a password prompt.
+
 ## Building from source
 
 Requirements: Go 1.23+, Node 20+, and the Wails CLI:

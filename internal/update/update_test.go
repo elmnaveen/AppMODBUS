@@ -324,3 +324,42 @@ func TestNotWritable(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+func TestLinuxFlavors(t *testing.T) {
+	for flavor, want := range map[LinuxFlavor]string{LinuxPortable: linuxPkg, LinuxDeb: DebAsset, LinuxDebLegacy: DebLegacyAsset} {
+		if got, _, err := PackageName("linux", "amd64", flavor); err != nil || got != want {
+			t.Errorf("flavor %d: %s %v", flavor, got, err)
+		}
+	}
+	fx := newFixture(t, func(fx *fixture) []fakeRelease {
+		files := fx.signedFiles(DebLegacyAsset, []byte("deb"))
+		for k, v := range fx.signedFiles(linuxPkg, []byte("tgz")) {
+			if k == linuxPkg {
+				files[k] = v
+			}
+		}
+		return []fakeRelease{{tag: "v1.0.0", files: files}}
+	})
+	u := fx.updater("0.9.0")
+	u.Linux = LinuxDebLegacy
+	rel, err := u.Check(context.Background(), Stable)
+	if err != nil || rel == nil || rel.Asset.Name != DebLegacyAsset {
+		t.Fatalf("deb check %+v %v", rel, err)
+	}
+	// Only the portable install is offered when its flavor's file is missing.
+	u.Linux = LinuxDeb
+	if rel, _ := u.Check(context.Background(), Stable); rel != nil {
+		t.Fatalf("expected no update without %s, got %+v", DebAsset, rel.Asset)
+	}
+	if DetectLinuxFlavor("/home/me/AppMODBUS", true) != LinuxPortable {
+		t.Fatal("a copy outside /opt is portable")
+	}
+}
+
+func TestInstallDebUsesPkexec(t *testing.T) {
+	l, err := Install("linux", "/tmp/x/AppMODBUS-ubuntu-24.04-amd64.deb", DebInstallPath)
+	if err != nil || l.Path != "sh" || len(l.Args) != 4 || !strings.Contains(l.Args[1], "pkexec dpkg -i") ||
+		l.Args[2] != "/tmp/x/AppMODBUS-ubuntu-24.04-amd64.deb" || l.Args[3] != DebInstallPath {
+		t.Fatalf("%+v %v", l, err)
+	}
+}
