@@ -178,6 +178,7 @@ type connection struct {
 	cfg    ConnectionConfig
 	client *modbus.Client
 	err    string
+	stats  *statsAcc
 }
 
 type poll struct {
@@ -189,6 +190,8 @@ type poll struct {
 	stop chan struct{}
 	kick chan struct{}
 	done chan struct{}
+
+	stats *statsAcc
 }
 
 // Engine is the application core.
@@ -200,6 +203,7 @@ type Engine struct {
 	order   []string
 	nextID  int
 	traffic *trafficLog
+	scan    scanner
 
 	Sim *simulator.Server
 
@@ -321,11 +325,14 @@ func (e *Engine) SaveConnection(cfg ConnectionConfig) (ConnectionInfo, error) {
 	}
 	client := modbus.NewClient(tr)
 	client.Gap = time.Duration(cfg.DelayMs) * time.Millisecond
+	stats := newStatsAcc()
 	if old != nil {
 		_ = old.client.Close()
+		stats = old.stats
 	}
+	client.Observe = func(_, _ byte, d time.Duration, err error) { stats.add(d, err) }
 	e.mu.Lock()
-	e.conns[cfg.ID] = &connection{cfg: cfg, client: client}
+	e.conns[cfg.ID] = &connection{cfg: cfg, client: client, stats: stats}
 	e.mu.Unlock()
 	e.emitConnections()
 	e.changed()
@@ -494,7 +501,7 @@ func (e *Engine) CreatePoll(cfg PollConfig) (Poll, error) {
 	if strings.TrimSpace(cfg.Name) == "" {
 		cfg.Name = "Mbpoll" + cfg.ID[1:]
 	}
-	p := &poll{cfg: cfg, st: PollState{ID: cfg.ID}}
+	p := &poll{cfg: cfg, st: PollState{ID: cfg.ID}, stats: newStatsAcc()}
 	e.polls[cfg.ID] = p
 	e.order = append(e.order, cfg.ID)
 	e.mu.Unlock()
@@ -709,18 +716,9 @@ func (e *Engine) pollOnce(p *poll) error {
 	}
 	timeout := time.Duration(c.cfg.TimeoutMs) * time.Millisecond
 	start := time.Now()
-	var (
-		regs []uint16
-		bits []bool
-		err  error
-	)
-	if modbus.IsBitFunction(byte(cfg.Function)) {
-		bits, err = c.client.ReadBits(byte(cfg.SlaveID), byte(cfg.Function), cfg.Address, cfg.Quantity, timeout)
-	} else {
-		regs, err = c.client.ReadRegisters(byte(cfg.SlaveID), byte(cfg.Function), cfg.Address, cfg.Quantity, timeout)
-	}
-	elapsed := time.Since(start)
+	bits, regs, elapsed, err := c.client.Read(byte(cfg.SlaveID), byte(cfg.Function), cfg.Address, cfg.Quantity, timeout)
 	e.setConnErr(c, err)
+	p.stats.add(elapsed, err)
 
 	p.mu.Lock()
 	p.st.Tx++

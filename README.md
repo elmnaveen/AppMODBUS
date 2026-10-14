@@ -15,11 +15,14 @@ with a **React + TypeScript** UI.
 | Poll windows | Any number of windows, each with its own slave ID, function, address, quantity and scan rate, shown as tabs or tiled side by side |
 | Read functions | 01 Read Coils, 02 Read Discrete Inputs, 03 Read Holding Registers, 04 Read Input Registers |
 | Write functions | 05, 06, 15, 16: double-click a cell, or use the **Write** dialog |
+| Other functions | 08 Diagnostics, 43/14 Read Device Identification |
 | Data formats | Signed, Unsigned, Hex, Binary; 32-bit Long / Unsigned Long / Float and 64-bit Long64 / Double, each in all four byte orders (AB CD, CD AB, BA DC, DC BA); set per window or per cell (right-click) |
 | Addressing | Protocol (base 0) or PLC (base 1) per window |
-| Diagnostics | Tx / Err counters, timeout, CRC and exception reporting, response time |
+| Diagnostics | Tx / Err counters, timeout, CRC and exception reporting, response time. **Diagnostics** window: per-connection and per-window statistics (timeouts, CRC errors, exceptions by code, min/avg/p95/max response time), response-time histogram and chart |
+| Scanning | Slave ID scan (1–247) on any connection; register map probe (which addresses of functions 01–04 a slave answers, then open them as poll windows); Modbus TCP network scan of an IP range with unit IDs and device identification |
+| Device tools | Function 43/14 Read Device Identification (basic, regular, extended); function 08 echo test and serial-line counters (read / clear) |
 | Traffic log | Live Tx/Rx frames in hex with timestamps; pause, filter, clear, save to file |
-| Simulator | Built-in Modbus slave (TCP, RTU over TCP/UDP, serial RTU) with an editable data table and optional live demo values |
+| Simulator | Built-in Modbus slave (TCP, RTU over TCP/UDP, serial RTU) with an editable data table, optional live demo values, optional valid-address ranges per table, function 08 counters and 43/14 identification |
 | Workspaces | Save/open `.mbw` files (connections, windows, formats, layout, simulator data); recent list; session autosave and restore on start-up with polling stopped; prompts to remap missing serial ports |
 | Tags & profiles | Name, gain/offset scaling and units per register; device profiles (bundled, personal and shared-folder) applied to any slave ID; import register maps from CSV/Excel with Modicon address detection |
 | Recording | **REC** per poll window stores values (in engineering units) on disk; Data management: retention (default 30 days), size cap (default 2 GB, oldest first), storage folder, export to CSV/Excel, delete by series or date range |
@@ -35,6 +38,11 @@ never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time
 <p>
   <img src="docs/screenshots/chart-inline.png" width="49%" alt="Inline chart under a poll window">
   <img src="docs/screenshots/chart-bits.png" width="49%" alt="Discrete inputs as step lanes">
+</p>
+
+<p>
+  <img src="docs/screenshots/diagnostics.png" width="49%" alt="Connection statistics">
+  <img src="docs/screenshots/register-map-scan.png" width="49%" alt="Register map scan">
 </p>
 
 <p>

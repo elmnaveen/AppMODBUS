@@ -3,7 +3,7 @@ import uPlot from 'uplot'
 import 'uplot/dist/uPlot.min.css'
 import { api, errText } from '../api'
 import { IconPlus, IconX } from '../components/Icons'
-import { decimate, fmtNum, isoLocal, merge, slice, stats, type Points, type Stats } from './data'
+import { decimate, fmtNum, isoLocal, merge, slice, stats, timeLabel, type Points, type Stats } from './data'
 import { live } from './live'
 import { HISTORY_FROM_SEC, RANGES, seriesColor, type PlotSeries } from './model'
 
@@ -393,17 +393,6 @@ export function Chart({ series, rangeSec, onRange, theme, title, compact, onAxis
     </div>
   )
 }
-
-// One-line tick labels: seconds for short spans, the date for long ones.
-function timeLabel(ms: number, incrSec: number): string {
-  const d = new Date(ms)
-  const hm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-  if (incrSec < 60) return `${hm}:${pad2(d.getSeconds())}`
-  if (incrSec < 6 * 3600) return d.getHours() === 0 && d.getMinutes() === 0 ? dayLabel(d) : hm
-  return incrSec >= 86400 ? dayLabel(d) : `${dayLabel(d)} ${hm}`
-}
-const pad2 = (n: number) => String(n).padStart(2, '0')
-const dayLabel = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
 // Lanes for bit series: each takes BIT_H of a LANE-high band.
 const LANE = 1.5

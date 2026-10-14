@@ -109,3 +109,14 @@ export const isoLocal = (ms: number) => {
   const d = new Date(ms)
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`
 }
+
+// One-line tick labels: seconds for short spans, the date for long ones.
+export function timeLabel(ms: number, incrSec: number): string {
+  const d = new Date(ms)
+  const hm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+  if (incrSec < 60) return `${hm}:${pad2(d.getSeconds())}`
+  if (incrSec < 6 * 3600) return d.getHours() === 0 && d.getMinutes() === 0 ? dayLabel(d) : hm
+  return incrSec >= 86400 ? dayLabel(d) : `${dayLabel(d)} ${hm}`
+}
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const dayLabel = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })

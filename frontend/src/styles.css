@@ -482,3 +482,55 @@ input:disabled, select:disabled { background: var(--panel-2); color: var(--muted
 .ax-unit { position: absolute; top: 2px; z-index: 2; font-size: 11px; color: var(--muted); pointer-events: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ax-unit.l { left: 6px; }
 .ax-unit.r { right: 4px; }
+
+/* ---------- diagnostics ---------- */
+.diag-layout { grid-template-columns: 230px minmax(0, 1fr); min-height: min(68vh, 640px); }
+.diag-layout .conn-item svg { color: var(--accent); }
+.diag-hint { font-family: var(--sans) !important; }
+.scan-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-left: auto; flex: none; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+.diag-main { min-width: 0; }
+.diag-stack { display: flex; flex-direction: column; gap: 10px; }
+.diag-intro { margin: 0; }
+.diag-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.diag-row > select { height: 30px; }
+.diag-field { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--muted); }
+.diag-field > select, .diag-field > input { height: 30px; color: var(--text); font-size: 13px; }
+.diag-field .checks { display: flex; gap: 14px; color: var(--text); font-size: 13px; height: 30px; align-items: center; }
+.diag-field .checks label { display: flex; gap: 5px; align-items: center; }
+.hint-line { font-size: 11.5px; margin-top: -4px; }
+.scan-progress { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+.scan-progress .bar { flex: 0 0 220px; height: 6px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--border); overflow: hidden; }
+.scan-progress .bar div { height: 100%; background: var(--accent); transition: width .2s; }
+.res-tbl td { padding: 5px 8px; }
+.res-tbl th { padding: 5px 8px; }
+.res-tbl td.num, .stats-tbl td.num { text-align: right; font-family: var(--mono); }
+.res-tbl td.acts { text-align: right; }
+.res-tbl td.acts .btn { margin-left: 4px; }
+.res-tbl td.ell, .stats-tbl td.ell { max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+.stats-tbl td { padding: 4px 8px; }
+.stats-tbl th { padding: 4px 8px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.kpi { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--panel); min-width: 0; }
+.kpi-l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
+.kpi-v { font-size: 20px; font-weight: 600; font-family: var(--mono); margin-top: 2px; }
+.kpi-s { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.diag-charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 10px; }
+.diag-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.diag-card-h { font-weight: 600; font-size: 12.5px; }
+.diag-empty { height: 160px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.hist { position: relative; display: flex; align-items: flex-end; gap: 4px; height: 170px; padding-bottom: 18px; border-bottom: 1px solid var(--border-strong); }
+.hist-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; position: relative; min-width: 0; }
+.hist-bar { width: 100%; max-width: 34px; border-radius: 4px 4px 0 0; min-height: 0; }
+.hist-col:hover .hist-bar { filter: brightness(1.15); }
+.hist-n { font-size: 11px; font-family: var(--mono); color: var(--text); margin-bottom: 2px; }
+.hist-l { position: absolute; bottom: -18px; font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.hist-unit { position: absolute; right: 0; bottom: -36px; font-size: 10.5px; }
+.hist { margin-bottom: 18px; }
+.rt-wrap { position: relative; height: 188px; }
+.rt-plot { position: absolute; inset: 16px 0 0 0; }
+.rt-empty { position: absolute; inset: 0; height: auto; }
+.sim-limits summary { cursor: pointer; color: var(--muted); font-size: 12px; margin: 4px 0; }
+.sim-limits p { margin: 0 0 6px; font-size: 11.5px; }
+.sim-limits label { margin-bottom: 4px; }
+.res-tbl th.num { text-align: right; }

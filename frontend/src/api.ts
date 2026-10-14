@@ -2,6 +2,7 @@
 import * as Go from '../wailsjs/go/main/App'
 import { EventsOn } from '../wailsjs/runtime/runtime'
 import type {
+  ConnectionStats, CounterValue, DeviceID, EchoResult, IDScanRequest, MapRange, MapScanRequest, NetworkScanRequest, ScanState,
   DataSettings, Sample, SeriesInfo,
   ImportOptions, ImportPreview, ImportResult, Profile, ProfileFolders, ProfileSummary, Tag,
   Layout, LoadResult, WorkspaceState,
@@ -96,6 +97,20 @@ export const api = {
   deleteRecordedSeries: (ids: string[]): Promise<void> => g.DeleteRecordedSeries(ids),
   deleteRecordedRange: (ids: string[], from: number, to: number): Promise<void> => g.DeleteRecordedRange(ids, from, to),
 
+  statistics: (detailId: string): Promise<ConnectionStats[]> => g.Statistics(detailId),
+  resetStatistics: (connectionId: string): Promise<void> => g.ResetStatistics(connectionId),
+  startIDScan: (r: IDScanRequest): Promise<void> => g.StartIDScan(r),
+  startMapScan: (r: MapScanRequest): Promise<void> => g.StartMapScan(r),
+  startNetworkScan: (r: NetworkScanRequest): Promise<void> => g.StartNetworkScan(r),
+  stopScan: (): Promise<void> => g.StopScan(),
+  scanState: (): Promise<ScanState> => g.ScanState(),
+  pollsFromMap: (connectionId: string, slaveId: number, ranges: MapRange[]): Promise<Poll[]> => g.PollsFromMap(connectionId, slaveId, ranges),
+  echoTest: (connectionId: string, slaveId: number, count: number): Promise<EchoResult> => g.EchoTest(connectionId, slaveId, count),
+  diagCounters: (connectionId: string, slaveId: number): Promise<CounterValue[]> => g.DiagCounters(connectionId, slaveId),
+  clearDiagCounters: (connectionId: string, slaveId: number): Promise<void> => g.ClearDiagCounters(connectionId, slaveId),
+  readDeviceIdentification: (connectionId: string, slaveId: number, code: number): Promise<DeviceID> =>
+    g.ReadDeviceIdentification(connectionId, slaveId, code),
+
   appInfo: (): Promise<AppInfo> => g.AppInfo(),
   updateSettings: (): Promise<UpdateSettings> => g.UpdateSettings(),
   setUpdateSettings: (channel: string, autoCheck: boolean): Promise<UpdateSettings> => g.SetUpdateSettings(channel, autoCheck),
@@ -111,6 +126,7 @@ export const events = {
   onConnections: (cb: (c: ConnectionInfo[]) => void) => EventsOn('connections', cb),
   onTraffic: (cb: (t: TrafficEntry[]) => void) => EventsOn('traffic', cb),
   onRecording: (cb: (error: string) => void) => EventsOn('recording:status', cb),
+  onScan: (cb: (s: ScanState) => void) => EventsOn('scan', cb),
   onWorkspace: (cb: (s: WorkspaceState) => void) => EventsOn('workspace:state', cb),
   onUpdateState: (cb: (s: UpdateState) => void) => EventsOn('update:state', cb),
   onUpdateProgress: (cb: (p: UpdateProgress) => void) => EventsOn('update:progress', cb),

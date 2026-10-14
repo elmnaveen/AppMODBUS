@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, errText, events } from './api'
 import { ConnectionsDialog, blankConnection } from './components/ConnectionsDialog'
 import {
-  IconBolt, IconBook, IconChart, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
+  IconBolt, IconBook, IconChart, IconPulse, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
 } from './components/Icons'
 import { PollDialog } from './components/PollDialog'
 import { PollWindow } from './components/PollWindow'
@@ -10,6 +10,7 @@ import { SimulatorPanel, defaultSim } from './components/SimulatorPanel'
 import { TrafficPanel } from './components/TrafficPanel'
 import { AboutDialog, UpdateBanner, useUpdates } from './components/Updates'
 import { DataDialog } from './components/DataDialog'
+import { DiagnosticsDialog } from './components/Diagnostics'
 import { ProfilesDialog } from './components/Profiles'
 import { TagDialog } from './components/TagDialog'
 import { FileMenu, PortRemapDialog, UnsavedDialog } from './components/Workspace'
@@ -33,6 +34,7 @@ type Dialog =
   | { kind: 'profiles' }
   | { kind: 'data' }
   | { kind: 'addSeries'; chartId: string }
+  | { kind: 'diag' }
   | null
 
 export default function App() {
@@ -300,6 +302,7 @@ export default function App() {
         <button className="btn" disabled={connections.length === 0} onClick={() => setDialog({ kind: 'write' })}><IconPen />Write</button>
         <button className="btn" onClick={() => setDialog({ kind: 'profiles' })}><IconBook />Profiles</button>
         <button className="btn" onClick={() => setDialog({ kind: 'data' })}><IconDatabase />Data</button>
+        <button className="btn" onClick={() => setDialog({ kind: 'diag' })}><IconPulse />Diagnostics</button>
         <span className="tb-sep" />
         <button className={`btn icon${view === 'tabs' ? ' on' : ''}`} title="Tabbed view" onClick={() => setView('tabs')}><IconTabs /></button>
         <button className={`btn icon${view === 'tile' ? ' on' : ''}`} title="Tile all windows" onClick={() => setView('tile')}><IconTile /></button>
@@ -444,6 +447,20 @@ export default function App() {
           initialPollId={polls[active] ? active : undefined}
           onSave={(series) => updateChart({ ...charts.tabs.find((t) => t.id === dialog.chartId)!, series })}
           onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === 'diag' && (
+        <DiagnosticsDialog
+          connections={connections}
+          theme={theme}
+          onPolls={(created) => {
+            created.forEach(addPoll)
+            if (created[0]) { setActive(created[0].config.id); setView('tabs') }
+            setDialog(null)
+            notify(`Opened ${created.length} poll window(s)`, false)
+          }}
+          onClose={() => setDialog(null)}
+          onInfo={onInfo}
         />
       )}
       {dialog?.kind === 'data' && <DataDialog onClose={() => setDialog(null)} onInfo={(m) => notify(m, false)} />}

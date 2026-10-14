@@ -113,6 +113,7 @@ export interface SimConfig {
   port: number
   slaveId: number
   animate: boolean
+  limits?: Partial<Record<SimTable, string>>
 }
 
 export interface SimStatus {
@@ -330,3 +331,75 @@ export interface Sample {
   t: number
   v: number
 }
+
+// ---- statistics, scans and device tools ----
+
+export interface HistBin { from: number; to: number; count: number }
+export interface RTSample { t: number; ms: number; ok: boolean }
+
+export interface Stats {
+  since: number
+  requests: number
+  ok: number
+  timeouts: number
+  crc: number
+  exceptions: number
+  invalid: number
+  ioErrors: number
+  byCode: Record<string, number>
+  minMs: number
+  avgMs: number
+  maxMs: number
+  p50Ms: number
+  p95Ms: number
+  lastError: string
+  lastAt: number
+  histogram?: HistBin[]
+  recent?: RTSample[]
+}
+
+export interface ConnectionStats {
+  id: string
+  name: string
+  stats: Stats
+  polls: { id: string; name: string; stats: Stats }[]
+}
+
+export interface IDResult { slaveId: number; status: 'ok' | 'exception' | 'garbled'; exception: string; ms: number }
+export interface MapRange { function: number; from: number; to: number }
+export interface NetResult {
+  host: string
+  port: number
+  units: number[]
+  status: 'modbus' | 'open'
+  exception: string
+  ms: number
+  identity: string[] | null
+}
+
+export interface ScanState {
+  kind: '' | 'ids' | 'map' | 'network'
+  running: boolean
+  done: number
+  total: number
+  phase: string
+  started: number
+  finished: number
+  error: string
+  ids: IDResult[]
+  ranges: MapRange[]
+  unsupported: number[]
+  hosts: NetResult[]
+  slaveId: number
+  connectionId: string
+  seq: number
+}
+
+export interface IDScanRequest { connectionId: string; from: number; to: number; function: number; address: number; timeoutMs: number }
+export interface MapScanRequest { connectionId: string; slaveId: number; functions: number[]; from: number; to: number; timeoutMs: number }
+export interface NetworkScanRequest { range: string; port: number; units: string; timeoutMs: number; identify: boolean }
+
+export interface EchoResult { sent: number; ok: number; minMs: number; avgMs: number; maxMs: number; errors: string[] }
+export interface CounterValue { sub: number; name: string; value: number; error: string }
+export interface DeviceObject { id: number; name: string; value: string }
+export interface DeviceID { conformity: number; objects: DeviceObject[] }

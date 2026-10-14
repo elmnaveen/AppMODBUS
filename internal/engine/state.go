@@ -78,7 +78,7 @@ func (e *Engine) Load(conns []ConnectionConfig, polls []PollConfig) (warnings []
 		if cfg.ID == "" {
 			cfg.ID = e.lockedID("p")
 		}
-		p := &poll{cfg: cfg, st: PollState{ID: cfg.ID}}
+		p := &poll{cfg: cfg, st: PollState{ID: cfg.ID}, stats: newStatsAcc()}
 		p.rebuildCells()
 		e.mu.Lock()
 		if _, dup := e.polls[cfg.ID]; dup {

@@ -316,6 +316,42 @@ func (t *rtuTransport) Exchange(unit byte, req PDU, timeout time.Duration) (PDU,
 		return PDU{}, err
 	}
 	total := RTUResponseLength(buf[:3])
+	if total == 0 && buf[1] == FuncEncapsulated {
+		// Variable length: read object headers until the size is known.
+		have := 3
+		for total == 0 {
+			_, need := DeviceIDFrameLength(buf[:have])
+			if need > len(buf) {
+				break
+			}
+			m, err := readFull(t.s, buf[have:need], deadline)
+			have += m
+			if err != nil {
+				t.dirty = true
+				t.traffic(Rx, buf[:have])
+				return PDU{}, err
+			}
+			total, _ = DeviceIDFrameLength(buf[:have])
+		}
+		if total > 0 && total <= len(buf) {
+			m, err := readFull(t.s, buf[have:total], deadline)
+			frame := buf[:have+m]
+			t.traffic(Rx, frame)
+			if err != nil {
+				t.dirty = true
+				return PDU{}, err
+			}
+			u, p, err := DecodeRTU(frame)
+			if err != nil {
+				t.dirty = true
+				return PDU{}, err
+			}
+			if u != unit {
+				return PDU{}, invalid("response from slave %d, expected %d", u, unit)
+			}
+			return p, nil
+		}
+	}
 	if total == 0 || total > len(buf) {
 		// Unknown layout: collect what arrives, then report it.
 		m, _ := t.s.readUntil(buf[3:], time.Now().Add(50*time.Millisecond))
@@ -505,6 +541,10 @@ type Client struct {
 	// Gap is the minimum idle time between the end of one transaction and
 	// the start of the next ("delay between polls").
 	Gap time.Duration
+
+	// Observe, when set, is told about every completed transaction (not
+	// broadcasts): how long the slave took and the outcome.
+	Observe func(unit, function byte, elapsed time.Duration, err error)
 }
 
 // NewClient wraps a transport.
@@ -534,6 +574,10 @@ func (c *Client) IsOpen() bool {
 // Do sends req to unit and validates the response. For broadcast requests
 // (unit 0) it returns a zero PDU and no error.
 func (c *Client) Do(unit byte, req PDU, timeout time.Duration) (PDU, error) {
+	return c.do(unit, req, timeout, nil)
+}
+
+func (c *Client) do(unit byte, req PDU, timeout time.Duration, elapsed *time.Duration) (PDU, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if !c.t.IsOpen() {
@@ -544,18 +588,50 @@ func (c *Client) Do(unit byte, req PDU, timeout time.Duration) (PDU, error) {
 	if wait := c.Gap - time.Since(c.last); wait > 0 {
 		time.Sleep(wait)
 	}
+	start := time.Now()
 	resp, err := c.t.Exchange(unit, req, timeout)
 	c.last = time.Now()
+	if elapsed != nil {
+		*elapsed = c.last.Sub(start)
+	}
 	if errors.Is(err, errBroadcast) {
 		return PDU{}, nil
 	}
 	if err != nil {
+		if c.Observe != nil {
+			c.Observe(unit, req.Function, c.last.Sub(start), err)
+		}
 		if !errors.Is(err, ErrTimeout) && !errors.Is(err, ErrInvalidResponse) {
 			_ = c.t.Close() // I/O failure: reconnect on next request
 		}
 		return PDU{}, err
 	}
-	return resp, CheckResponse(req, resp)
+	err = CheckResponse(req, resp)
+	if c.Observe != nil {
+		c.Observe(unit, req.Function, c.last.Sub(start), err)
+	}
+	return resp, err
+}
+
+// Read performs FC01-FC04 and also reports how long the slave took,
+// excluding time spent waiting for other requests on the same line.
+func (c *Client) Read(unit, fc byte, address, quantity int, timeout time.Duration) (bits []bool, regs []uint16, elapsed time.Duration, err error) {
+	req, err := ReadRequest(fc, address, quantity)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	var d time.Duration
+	resp, err := c.do(unit, req, timeout, &d)
+	if err != nil {
+		return nil, nil, d, err
+	}
+	if unit == 0 {
+		return nil, nil, d, errors.New("broadcast reads get no response")
+	}
+	if IsBitFunction(fc) {
+		return DecodeBits(resp, quantity), nil, d, nil
+	}
+	return nil, DecodeRegisters(resp), d, nil
 }
 
 // ReadBits performs FC01/FC02.
