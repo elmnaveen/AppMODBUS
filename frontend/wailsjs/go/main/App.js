@@ -6,8 +6,24 @@ export function AppInfo() {
   return window['go']['main']['App']['AppInfo']();
 }
 
+export function ApplyProfile(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ApplyProfile'](arg1, arg2, arg3, arg4);
+}
+
+export function BuildImport(arg1, arg2) {
+  return window['go']['main']['App']['BuildImport'](arg1, arg2);
+}
+
 export function CheckForUpdates() {
   return window['go']['main']['App']['CheckForUpdates']();
+}
+
+export function ChooseSharedProfileFolder() {
+  return window['go']['main']['App']['ChooseSharedProfileFolder']();
+}
+
+export function ClearSharedProfileFolder() {
+  return window['go']['main']['App']['ClearSharedProfileFolder']();
 }
 
 export function Connect(arg1) {
@@ -30,20 +46,44 @@ export function DeletePoll(arg1) {
   return window['go']['main']['App']['DeletePoll'](arg1);
 }
 
+export function DeleteProfile(arg1) {
+  return window['go']['main']['App']['DeleteProfile'](arg1);
+}
+
 export function Disconnect(arg1) {
   return window['go']['main']['App']['Disconnect'](arg1);
+}
+
+export function ExportProfile(arg1) {
+  return window['go']['main']['App']['ExportProfile'](arg1);
 }
 
 export function Formats() {
   return window['go']['main']['App']['Formats']();
 }
 
+export function GetProfile(arg1) {
+  return window['go']['main']['App']['GetProfile'](arg1);
+}
+
 export function GetUpdateState() {
   return window['go']['main']['App']['GetUpdateState']();
 }
 
+export function ImportProfileFile() {
+  return window['go']['main']['App']['ImportProfileFile']();
+}
+
+export function ImportTable() {
+  return window['go']['main']['App']['ImportTable']();
+}
+
 export function InstallUpdate() {
   return window['go']['main']['App']['InstallUpdate']();
+}
+
+export function ListProfiles() {
+  return window['go']['main']['App']['ListProfiles']();
 }
 
 export function NewWorkspace() {
@@ -70,6 +110,18 @@ export function Polls() {
   return window['go']['main']['App']['Polls']();
 }
 
+export function PreviewTable(arg1) {
+  return window['go']['main']['App']['PreviewTable'](arg1);
+}
+
+export function ProfileFolders() {
+  return window['go']['main']['App']['ProfileFolders']();
+}
+
+export function ProfileFromPoll(arg1, arg2) {
+  return window['go']['main']['App']['ProfileFromPoll'](arg1, arg2);
+}
+
 export function ReadOnce(arg1) {
   return window['go']['main']['App']['ReadOnce'](arg1);
 }
@@ -84,6 +136,10 @@ export function RestoreSession() {
 
 export function SaveConnection(arg1) {
   return window['go']['main']['App']['SaveConnection'](arg1);
+}
+
+export function SaveProfile(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveProfile'](arg1, arg2, arg3);
 }
 
 export function SaveTrafficLog(arg1) {
@@ -112,6 +168,10 @@ export function SetCharts(arg1) {
 
 export function SetLayout(arg1) {
   return window['go']['main']['App']['SetLayout'](arg1);
+}
+
+export function SetTag(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetTag'](arg1, arg2, arg3);
 }
 
 export function SetTrafficPaused(arg1) {

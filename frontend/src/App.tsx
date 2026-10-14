@@ -2,13 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, errText, events } from './api'
 import { ConnectionsDialog, blankConnection } from './components/ConnectionsDialog'
 import {
-  IconBolt, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
+  IconBolt, IconBook, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
 } from './components/Icons'
-import { PollDialog, blankPoll } from './components/PollDialog'
+import { PollDialog } from './components/PollDialog'
 import { PollWindow } from './components/PollWindow'
 import { SimulatorPanel, defaultSim } from './components/SimulatorPanel'
 import { TrafficPanel } from './components/TrafficPanel'
 import { AboutDialog, UpdateBanner, useUpdates } from './components/Updates'
+import { ProfilesDialog } from './components/Profiles'
+import { TagDialog } from './components/TagDialog'
 import { FileMenu, PortRemapDialog, UnsavedDialog } from './components/Workspace'
 import { ManualWriteDialog, WriteCellDialog } from './components/WriteDialogs'
 import { useTheme } from './theme'
@@ -20,6 +22,8 @@ type Dialog =
   | { kind: 'writeCell'; pollId: string; cell: Cell }
   | { kind: 'write' }
   | { kind: 'about' }
+  | { kind: 'tag'; pollId: string; cell: Cell }
+  | { kind: 'profiles' }
   | null
 
 export default function App() {
@@ -140,14 +144,14 @@ export default function App() {
       setSim(await api.simStatus())
       const conn = connections.find((c) => c.mode === 'tcp' && c.host === '127.0.0.1' && c.port === port)
         ?? await api.saveConnection({ ...blankConnection(), name: 'Local simulator', host: '127.0.0.1', port })
-      const holding = await api.createPoll({ ...blankPoll(conn.id), name: 'Holding 0-19', quantity: 20, cellFormats: { '2': 'float_abcd' } })
-      const input = await api.createPoll({ ...blankPoll(conn.id), name: 'Live inputs', function: 4, quantity: 10, scanRateMs: 500, cellFormats: { '0': 'float_abcd' } })
-      const coils = await api.createPoll({ ...blankPoll(conn.id), name: 'Coils', function: 1, quantity: 16 })
-      for (const p of [holding, input, coils]) {
+      // Label the demo windows with the bundled demo meter profile.
+      const created = await api.applyProfile('bundled:appmodbus-demo-meter.json', conn.id, 1, 500)
+      for (const p of created) {
         addPoll(p)
         await api.startPoll(p.config.id)
       }
-      setActive(input.config.id)
+      const live = created.find((p) => p.config.function === 4)
+      if (live) setActive(live.config.id)
     } catch (e) {
       notify(errText(e))
     }
@@ -173,6 +177,7 @@ export default function App() {
         onEdit={() => setDialog({ kind: 'poll', id })}
         onClose={() => closePoll(id)}
         onWrite={(cell) => setDialog({ kind: 'writeCell', pollId: id, cell })}
+        onTag={(cell) => setDialog({ kind: 'tag', pollId: id, cell })}
         onError={onError}
       />
     )
@@ -194,6 +199,7 @@ export default function App() {
         <button className="btn" disabled={order.length === 0} onClick={() => api.startAll().catch((e) => notify(errText(e)))}><IconPlay />Start all</button>
         <button className="btn" disabled={running === 0} onClick={() => api.stopAll()}><IconStop />Stop all</button>
         <button className="btn" disabled={connections.length === 0} onClick={() => setDialog({ kind: 'write' })}><IconPen />Write</button>
+        <button className="btn" onClick={() => setDialog({ kind: 'profiles' })}><IconBook />Profiles</button>
         <span className="tb-sep" />
         <button className={`btn icon${view === 'tabs' ? ' on' : ''}`} title="Tabbed view" onClick={() => setView('tabs')}><IconTabs /></button>
         <button className={`btn icon${view === 'tile' ? ' on' : ''}`} title="Tile all windows" onClick={() => setView('tile')}><IconTile /></button>
@@ -301,6 +307,19 @@ export default function App() {
           formats={formats}
           defaults={activePoll ? { connectionId: activePoll.config.connectionId, slaveId: activePoll.config.slaveId } : undefined}
           onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === 'tag' && polls[dialog.pollId] && (
+        <TagDialog poll={polls[dialog.pollId]} cell={dialog.cell} onClose={() => setDialog(null)} />
+      )}
+      {dialog?.kind === 'profiles' && (
+        <ProfilesDialog
+          connections={connections}
+          formats={formats}
+          activePollId={active}
+          onApplied={(created) => { created.forEach(addPoll); if (created[0]) setActive(created[0].config.id) }}
+          onClose={() => setDialog(null)}
+          onError={onError}
         />
       )}
       {dialog?.kind === 'about' && (

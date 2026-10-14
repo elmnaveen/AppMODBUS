@@ -6,6 +6,7 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -72,6 +73,65 @@ type PollConfig struct {
 	Format        datafmt.Format         `json:"format"`
 	PLCAddressing bool                   `json:"plcAddressing"` // display 1-based
 	CellFormats   map[int]datafmt.Format `json:"cellFormats"`
+	Tags          map[int]Tag            `json:"tags"`
+}
+
+// Tag names a register and converts its raw value to engineering units:
+// shown = raw × Gain + Offset.
+type Tag struct {
+	Name     string  `json:"name"`
+	Gain     float64 `json:"gain"`
+	Offset   float64 `json:"offset"`
+	Unit     string  `json:"unit"`
+	Decimals int     `json:"decimals"` // -1 = automatic
+	Note     string  `json:"note,omitempty"`
+}
+
+// Scales reports whether the tag changes the value.
+func (t Tag) Scales() bool { return t.Gain != 1 || t.Offset != 0 }
+
+func normalizeTag(t *Tag) error {
+	if t.Gain == 0 {
+		t.Gain = 1
+	}
+	if t.Decimals < -1 || t.Decimals > 9 {
+		return fmt.Errorf("decimals must be -1 (auto) or 0..9")
+	}
+	t.Name = strings.TrimSpace(t.Name)
+	t.Unit = strings.TrimSpace(t.Unit)
+	return nil
+}
+
+// decimalsFor picks display decimals: explicit, or derived from the gain
+// (×0.1 → 1 decimal, ×0.01 → 2, …).
+func (t Tag) decimalsFor(f datafmt.Format) int {
+	if t.Decimals >= 0 {
+		return t.Decimals
+	}
+	if !datafmt.IsInteger(f) {
+		return -1
+	}
+	d := 0
+	for g := math.Abs(t.Gain); g < 1 && g > 0 && d < 9; g *= 10 {
+		d++
+	}
+	if t.Offset != math.Trunc(t.Offset) && d == 0 {
+		d = 2
+	}
+	return d
+}
+
+// scaled formats raw × gain + offset.
+func (t Tag) scaled(f datafmt.Format, regs []uint16) (string, bool) {
+	v, ok := datafmt.Numeric(f, regs)
+	if !ok {
+		return "", false
+	}
+	v = v*t.Gain + t.Offset
+	if d := t.decimalsFor(f); d >= 0 {
+		return strconv.FormatFloat(v, 'f', d, 64), true
+	}
+	return strconv.FormatFloat(v, 'g', 7, 64), true
 }
 
 // Cell is one displayed value. Span is the number of registers the value
@@ -82,6 +142,9 @@ type Cell struct {
 	Value   string `json:"value"`
 	Span    int    `json:"span"`
 	Format  string `json:"format"`
+	Name    string `json:"name,omitempty"`
+	Unit    string `json:"unit,omitempty"`
+	RawText string `json:"rawText,omitempty"` // unscaled value when a tag scales it
 }
 
 // PollState is the live state of a poll window.
@@ -398,6 +461,15 @@ func normalizePoll(p *PollConfig) error {
 			delete(p.CellFormats, a)
 		}
 	}
+	if p.Tags == nil {
+		p.Tags = map[int]Tag{}
+	}
+	for a, t := range p.Tags {
+		if err := normalizeTag(&t); err != nil {
+			return fmt.Errorf("tag at %d: %w", a, err)
+		}
+		p.Tags[a] = t
+	}
 	return nil
 }
 
@@ -710,6 +782,10 @@ func (p *poll) snapshot() Poll {
 	for k, v := range p.cfg.CellFormats {
 		cfg.CellFormats[k] = v
 	}
+	cfg.Tags = make(map[int]Tag, len(p.cfg.Tags))
+	for k, v := range p.cfg.Tags {
+		cfg.Tags[k] = v
+	}
 	st := p.st
 	st.Cells = append([]Cell(nil), p.st.Cells...)
 	return Poll{Config: cfg, State: st}
@@ -722,6 +798,9 @@ func (p *poll) rebuildCells() {
 	if modbus.IsBitFunction(byte(cfg.Function)) {
 		for i := range cells {
 			c := Cell{Address: cfg.Address + i, Span: 1, Format: "bit", Value: "-"}
+			if t, ok := cfg.Tags[c.Address]; ok {
+				c.Name, c.Unit = t.Name, t.Unit
+			}
 			if i < len(p.bits) {
 				c.Raw = b2i(p.bits[i])
 				c.Value = strconv.Itoa(c.Raw)
@@ -742,10 +821,20 @@ func (p *poll) rebuildCells() {
 			span = cfg.Quantity - i // not enough registers left: show what fits
 		}
 		c := Cell{Address: addr, Span: span, Format: string(f), Value: "-"}
+		tag, tagged := cfg.Tags[addr]
+		if tagged {
+			c.Name, c.Unit = tag.Name, tag.Unit
+		}
 		if i < len(p.regs) {
 			c.Raw = int(p.regs[i])
 			if span == datafmt.Registers(f) && i+span <= len(p.regs) {
-				c.Value = datafmt.FormatValue(f, p.regs[i:i+span])
+				regs := p.regs[i : i+span]
+				c.Value = datafmt.FormatValue(f, regs)
+				if tagged && tag.Scales() {
+					if v, ok := tag.scaled(f, regs); ok {
+						c.RawText, c.Value = c.Value, v
+					}
+				}
 			} else {
 				c.Value = "—"
 			}

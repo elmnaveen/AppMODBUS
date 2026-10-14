@@ -15,10 +15,11 @@ interface Props {
   onEdit: () => void
   onClose: () => void
   onWrite: (cell: Cell) => void
+  onTag: (cell: Cell) => void
   onError: (msg: string) => void
 }
 
-function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdit, onClose, onWrite, onError }: Props) {
+function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdit, onClose, onWrite, onTag, onError }: Props) {
   const { config: c, state: s } = poll
   const [sel, setSel] = useState<number | null>(null)
   const [menu, setMenu] = useState<{ x: number; y: number; cell: Cell } | null>(null)
@@ -38,6 +39,9 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
   const fmtLabel = (id: string) => formats.find((f) => f.id === id)?.label ?? id
   const wide = !bits && (c.format === 'binary' || Object.values(c.cellFormats).some((f) => f === 'binary' || f.startsWith('double') || f.startsWith('long64')))
   const valueWidth = wide ? 170 : bits ? 70 : 110
+  // A name column appears once any register of the window has a name.
+  const named = s.cells.some((x) => x.name)
+  const hasUnits = s.cells.some((x) => x.unit)
 
   const columns: Cell[][] = []
   for (let i = 0; i < s.cells.length; i += ROWS) columns.push(s.cells.slice(i, i + ROWS))
@@ -78,10 +82,10 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
         )}
       </div>
       <div className="grid-wrap">
-        <div className="grid" style={{ ['--vw' as string]: `${valueWidth}px` }}>
+        <div className={`grid${named ? ' named' : ''}`} style={{ ['--vw' as string]: `${valueWidth + (hasUnits ? 34 : 0)}px` }}>
           {columns.map((col, ci) => (
             <div className="gcol" key={ci}>
-              <div className="gcol-head"><span>Addr</span><span style={{ textAlign: 'right' }}>{bits ? 'Bit' : 'Value'}</span></div>
+              <div className="gcol-head"><span>Addr</span>{named && <span>Name</span>}<span style={{ textAlign: 'right' }}>{bits ? 'Bit' : 'Value'}</span></div>
               {col.map((cell) => {
                 const override = c.cellFormats[String(cell.address)] !== undefined
                 return (
@@ -96,11 +100,14 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
                     onContextMenu={(e) => {
                       e.preventDefault()
                       setSel(cell.address)
-                      if (!bits) setMenu({ x: e.clientX, y: e.clientY, cell })
+                      setMenu({ x: e.clientX, y: e.clientY, cell: cell.span === 0 ? s.cells.find((x) => x.span > 0 && x.address < cell.address && x.address + x.span > cell.address) ?? cell : cell })
                     }}
-                    title={cell.span > 0 && !bits ? `${fmtLabel(cell.format)} · raw 0x${cell.raw.toString(16).toUpperCase().padStart(4, '0')}` : undefined}
+                    title={cell.span > 0 && !bits
+                      ? `${cell.name ? cell.name + ' · ' : ''}${fmtLabel(cell.format)}${cell.rawText ? ` · value ${cell.rawText}` : ''} · raw 0x${cell.raw.toString(16).toUpperCase().padStart(4, '0')}`
+                      : cell.name || undefined}
                   >
                     <span className="a">{cell.address + base}</span>
+                    {named && <span className="n">{cell.span === 0 ? '' : cell.name}</span>}
                     {cell.span === 0 ? (
                       <span className="v cont">⋯</span>
                     ) : bits ? (
@@ -109,7 +116,9 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
                         <span className={`bitdot${cell.value === '1' ? ' on' : ''}`} />
                       </span>
                     ) : (
-                      <span key={cell.value} className={`v${override ? ' override' : ''}${changed.has(cell.address) ? ' chg' : ''}`}>{cell.value}</span>
+                      <span key={cell.value} className={`v${override ? ' override' : ''}${cell.rawText ? ' scaled' : ''}${changed.has(cell.address) ? ' chg' : ''}`}>
+                        {cell.value}{cell.unit && <small className="u">{cell.unit}</small>}
+                      </span>
                     )}
                   </div>
                 )
@@ -120,7 +129,12 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
       </div>
       {menu && (
         <ContextMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)}>
-          {['16-bit', '32-bit', '64-bit'].map((g) => (
+          <button onClick={() => { setMenu(null); onTag(menu.cell) }}>{menu.cell.name ? `Edit tag “${menu.cell.name}”…` : 'Name / scale this register…'}</button>
+          {isWritable(c.function) && (
+            <button onClick={() => { setMenu(null); onWrite(menu.cell) }}>Write value…</button>
+          )}
+          {!bits && <hr />}
+          {!bits && ['16-bit', '32-bit', '64-bit'].map((g) => (
             <div key={g}>
               <div className="grp">{g}</div>
               {formats.filter((f) => f.group === g).map((f) => (
@@ -137,12 +151,11 @@ function PollWindowImpl({ poll, connectionName, formats, focused, onFocus, onEdi
               ))}
             </div>
           ))}
-          <hr />
-          <button onClick={() => { setMenu(null); run(() => api.setCellFormat(c.id, menu.cell.address, '')) }}>
-            Reset to window format ({fmtLabel(c.format)})
-          </button>
-          {isWritable(c.function) && (
-            <button onClick={() => { setMenu(null); onWrite(menu.cell) }}>Write value…</button>
+          {!bits && <hr />}
+          {!bits && (
+            <button onClick={() => { setMenu(null); run(() => api.setCellFormat(c.id, menu.cell.address, '')) }}>
+              Reset to window format ({fmtLabel(c.format)})
+            </button>
           )}
         </ContextMenu>
       )}

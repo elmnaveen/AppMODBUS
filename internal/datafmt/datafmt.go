@@ -266,3 +266,70 @@ func ParseValue(f Format, text string) ([]uint16, error) {
 func rangeErr(s, want string) error {
 	return fmt.Errorf("%q is out of range (expected %s)", s, want)
 }
+
+// IsInteger reports whether f holds an integer value.
+func IsInteger(f Format) bool {
+	kind, _ := split(f)
+	return kind != "float" && kind != "double"
+}
+
+// Numeric returns the value of regs in format f as a float64. Hex and
+// binary are treated as unsigned 16-bit.
+func Numeric(f Format, regs []uint16) (float64, bool) {
+	if len(regs) < Registers(f) || len(regs) == 0 {
+		return 0, false
+	}
+	kind, o := split(f)
+	switch kind {
+	case "signed":
+		return float64(int16(regs[0])), true
+	case "unsigned", "hex", "binary":
+		return float64(regs[0]), true
+	}
+	b := regsToBE(regs[:Registers(f)], o)
+	switch kind {
+	case "long":
+		return float64(int32(binary.BigEndian.Uint32(b))), true
+	case "ulong":
+		return float64(binary.BigEndian.Uint32(b)), true
+	case "float":
+		v := float64(math.Float32frombits(binary.BigEndian.Uint32(b)))
+		return v, !math.IsNaN(v) && !math.IsInf(v, 0)
+	case "long64":
+		return float64(int64(binary.BigEndian.Uint64(b))), true
+	case "double":
+		v := math.Float64frombits(binary.BigEndian.Uint64(b))
+		return v, !math.IsNaN(v) && !math.IsInf(v, 0)
+	}
+	return 0, false
+}
+
+var intRanges = map[string][2]float64{
+	"signed": {math.MinInt16, math.MaxInt16}, "unsigned": {0, math.MaxUint16},
+	"hex": {0, math.MaxUint16}, "binary": {0, math.MaxUint16},
+	"long": {math.MinInt32, math.MaxInt32}, "ulong": {0, math.MaxUint32},
+	"long64": {math.MinInt64, math.MaxInt64},
+}
+
+// FromNumeric encodes v in format f, rounding to the nearest integer for
+// integer formats and rejecting values out of range.
+func FromNumeric(f Format, v float64) ([]uint16, error) {
+	if math.IsNaN(v) || math.IsInf(v, 0) {
+		return nil, fmt.Errorf("value is not a finite number")
+	}
+	kind, _ := split(f)
+	if !IsInteger(f) {
+		return ParseValue(f, strconv.FormatFloat(v, 'g', -1, 64))
+	}
+	r := math.Round(v)
+	lim := intRanges[kind]
+	lo, hi := lim[0], lim[1]
+	if r < lo || r > hi {
+		return nil, fmt.Errorf("raw value %s is out of range for %s", strconv.FormatFloat(r, 'f', -1, 64), f)
+	}
+	switch kind {
+	case "hex", "binary", "unsigned":
+		return ParseValue(Unsigned, strconv.FormatFloat(r, 'f', 0, 64))
+	}
+	return ParseValue(f, strconv.FormatFloat(r, 'f', 0, 64))
+}

@@ -1,0 +1,28 @@
+{
+  "format": "appmodbus-profile",
+  "version": 1,
+  "name": "AppMODBUS demo meter (simulator)",
+  "manufacturer": "AppMODBUS",
+  "model": "Demo meter",
+  "description": "Example profile matching the built-in simulator's live demo values (Simulator > Live demo values). Use it as a template for your own meters.",
+  "defaultSlaveId": 1,
+  "registers": [
+    { "address": 0, "function": 4, "name": "Voltage (float)", "format": "float_abcd", "unit": "V", "decimals": 2 },
+    { "address": 2, "function": 4, "name": "Uptime counter", "format": "unsigned", "unit": "×0.5 s" },
+    { "address": 3, "function": 4, "name": "Voltage L1", "format": "unsigned", "gain": 0.1, "unit": "V" },
+    { "address": 4, "function": 4, "name": "Voltage L2", "format": "unsigned", "gain": 0.1, "unit": "V" },
+    { "address": 5, "function": 4, "name": "Voltage L3", "format": "unsigned", "gain": 0.1, "unit": "V" },
+    { "address": 6, "function": 4, "name": "Current L1", "format": "unsigned", "gain": 0.01, "unit": "A" },
+    { "address": 7, "function": 4, "name": "Current L2", "format": "unsigned", "gain": 0.01, "unit": "A" },
+    { "address": 8, "function": 4, "name": "Current L3", "format": "unsigned", "gain": 0.01, "unit": "A" },
+    { "address": 9, "function": 4, "name": "Frequency", "format": "unsigned", "gain": 0.01, "unit": "Hz" },
+    { "address": 0, "function": 2, "name": "Phase indicator 1" },
+    { "address": 1, "function": 2, "name": "Phase indicator 2" },
+    { "address": 2, "function": 2, "name": "Phase indicator 3" },
+    { "address": 0, "function": 3, "name": "CT primary", "format": "unsigned", "unit": "A" },
+    { "address": 1, "function": 3, "name": "PT primary", "format": "unsigned", "unit": "V" },
+    { "address": 2, "function": 3, "name": "Demand setpoint", "format": "float_abcd", "unit": "kW" },
+    { "address": 0, "function": 1, "name": "Relay 1" },
+    { "address": 1, "function": 1, "name": "Relay 2" }
+  ]
+}

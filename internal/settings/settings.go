@@ -17,6 +17,8 @@ type Settings struct {
 	LastUpdateCheckAt int64  `json:"lastUpdateCheckAt"` // unix ms
 
 	RecentWorkspaces []string `json:"recentWorkspaces"` // most recent first
+
+	SharedProfileDir string `json:"sharedProfileDir"` // optional team profile folder
 }
 
 // MaxRecent is the length of the recent workspaces list.

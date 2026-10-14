@@ -361,3 +361,48 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .ws-name { display: flex; align-items: center; gap: 6px; font-weight: 600; max-width: 260px; padding: 0 8px; color: var(--muted); }
 .ws-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ws-name .dirty { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+
+/* ---------- tags ---------- */
+.grid.named .gcol-head, .grid.named .gcell { grid-template-columns: 64px 150px var(--vw, 110px); }
+.gcell .n { padding: 0 8px; font-family: var(--sans); font-size: 12px; color: var(--muted); border-right: 1px solid var(--border); height: 100%; display: flex; align-items: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.gcell .v .u { margin-left: 4px; font-family: var(--sans); font-size: 11px; color: var(--faint); }
+.gcell .v.scaled { color: var(--text); }
+.tag-preview { background: var(--panel-2); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; }
+
+/* ---------- profiles ---------- */
+.prof-toolbar { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+.prof-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 14px; height: min(62vh, 620px); }
+.prof-list { border: 1px solid var(--border); border-radius: 8px; overflow: auto; }
+.prof-list .grp { padding: 8px 10px 4px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--faint); letter-spacing: .5px; }
+.prof-list .conn-item svg { color: var(--accent); }
+.prof-empty { padding: 2px 10px 8px; font-size: 12px; }
+.prof-detail { display: flex; flex-direction: column; min-height: 0; }
+.prof-meta { grid-template-columns: 150px 1fr; margin-bottom: 10px; }
+.prof-regs { flex: 1; overflow: auto; border: 1px solid var(--border); border-radius: 8px; padding: 6px; min-height: 0; }
+.prof-actions { display: flex; gap: 6px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.apply-box { display: flex; gap: 6px; align-items: center; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
+.apply-box select { width: 170px; height: 26px; }
+.apply-box input { height: 26px; }
+.tbl { border-collapse: collapse; width: 100%; font-size: 12px; }
+.tbl th { text-align: left; font-weight: 600; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--panel); white-space: nowrap; }
+.tbl td { padding: 2px 4px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tbl input, .tbl select { height: 26px; padding: 0 6px; }
+.tbl td:nth-child(2) input { width: 80px; }
+.tbl td:nth-child(5) input, .tbl td:nth-child(6) input { width: 70px; }
+.tbl td:nth-child(7) input { width: 70px; }
+.import-opts { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; font-size: 12px; color: var(--muted); }
+.import-opts label { display: flex; align-items: center; gap: 6px; }
+.import-opts input[type="number"] { width: 64px; height: 28px; }
+.import-opts input[type="text"] { width: 150px; height: 28px; }
+.import-opts select { height: 28px; width: auto; }
+.import-split { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; height: min(56vh, 560px); }
+.import-sheet, .import-result { display: flex; flex-direction: column; min-height: 0; }
+.sheet-scroll { flex: 1; overflow: auto; border: 1px solid var(--border); border-radius: 8px; min-height: 0; }
+.tbl.sheet td { max-width: 220px; overflow: hidden; text-overflow: ellipsis; font-family: var(--sans); }
+.tbl.sheet th select { height: 24px; font-size: 11.5px; min-width: 110px; }
+.tbl.sheet th select.mapped { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.tbl.sheet td.mapped { background: var(--accent-soft); }
+.tbl.sheet tr.hdr td { font-weight: 700; background: var(--panel-2); }
+.tbl.sheet tr.skip td { color: var(--faint); }
+.warn-list { margin-top: 8px; font-size: 12px; color: var(--warn); max-height: 120px; overflow: auto; }
+input:disabled, select:disabled { background: var(--panel-2); color: var(--muted); cursor: default; }

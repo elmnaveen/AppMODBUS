@@ -2,6 +2,7 @@
 import * as Go from '../wailsjs/go/main/App'
 import { EventsOn } from '../wailsjs/runtime/runtime'
 import type {
+  ImportOptions, ImportPreview, ImportResult, Profile, ProfileFolders, ProfileSummary, Tag,
   Layout, LoadResult, WorkspaceState,
   AppInfo, UpdateProgress, UpdateSettings, UpdateState,
   ConnectionConfig, ConnectionInfo, FormatInfo, Poll, PollConfig, SimConfig,
@@ -60,6 +61,23 @@ export const api = {
   setLayout: (l: Layout): Promise<void> => g.SetLayout(l),
   setCharts: (charts: unknown): Promise<void> => g.SetCharts(charts),
   remapSerialPort: (connectionId: string, port: string): Promise<void> => g.RemapSerialPort(connectionId, port),
+
+  setTag: (pollId: string, address: number, tag: Tag | null): Promise<void> => g.SetTag(pollId, address, tag),
+  listProfiles: (): Promise<ProfileSummary[]> => g.ListProfiles(),
+  getProfile: (id: string): Promise<Profile> => g.GetProfile(id),
+  saveProfile: (p: Profile, dest: 'user' | 'shared', id: string): Promise<string> => g.SaveProfile(p, dest, id),
+  deleteProfile: (id: string): Promise<void> => g.DeleteProfile(id),
+  profileFolders: (): Promise<ProfileFolders> => g.ProfileFolders(),
+  chooseSharedProfileFolder: (): Promise<string> => g.ChooseSharedProfileFolder(),
+  clearSharedProfileFolder: (): Promise<void> => g.ClearSharedProfileFolder(),
+  applyProfile: (id: string, connectionId: string, slaveId: number, scanRateMs: number): Promise<Poll[]> =>
+    g.ApplyProfile(id, connectionId, slaveId, scanRateMs),
+  profileFromPoll: (pollId: string, name: string): Promise<Profile> => g.ProfileFromPoll(pollId, name),
+  importTable: (): Promise<ImportPreview | null> => g.ImportTable(),
+  previewTable: (path: string): Promise<ImportPreview> => g.PreviewTable(path),
+  buildImport: (path: string, o: ImportOptions): Promise<ImportResult> => g.BuildImport(path, o),
+  importProfileFile: (): Promise<string> => g.ImportProfileFile(),
+  exportProfile: (id: string): Promise<string> => g.ExportProfile(id),
 
   appInfo: (): Promise<AppInfo> => g.AppInfo(),
   updateSettings: (): Promise<UpdateSettings> => g.UpdateSettings(),

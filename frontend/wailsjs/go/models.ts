@@ -29,6 +29,9 @@ export namespace engine {
 	    value: string;
 	    span: number;
 	    format: string;
+	    name?: string;
+	    unit?: string;
+	    rawText?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Cell(source);
@@ -41,6 +44,9 @@ export namespace engine {
 	        this.value = source["value"];
 	        this.span = source["span"];
 	        this.format = source["format"];
+	        this.name = source["name"];
+	        this.unit = source["unit"];
+	        this.rawText = source["rawText"];
 	    }
 	}
 	export class ConnectionConfig {
@@ -165,6 +171,28 @@ export namespace engine {
 		    return a;
 		}
 	}
+	export class Tag {
+	    name: string;
+	    gain: number;
+	    offset: number;
+	    unit: string;
+	    decimals: number;
+	    note?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Tag(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.gain = source["gain"];
+	        this.offset = source["offset"];
+	        this.unit = source["unit"];
+	        this.decimals = source["decimals"];
+	        this.note = source["note"];
+	    }
+	}
 	export class PollConfig {
 	    id: string;
 	    name: string;
@@ -177,6 +205,7 @@ export namespace engine {
 	    format: string;
 	    plcAddressing: boolean;
 	    cellFormats: Record<number, string>;
+	    tags: Record<number, Tag>;
 	
 	    static createFrom(source: any = {}) {
 	        return new PollConfig(source);
@@ -195,7 +224,26 @@ export namespace engine {
 	        this.format = source["format"];
 	        this.plcAddressing = source["plcAddressing"];
 	        this.cellFormats = source["cellFormats"];
+	        this.tags = this.convertValues(source["tags"], Tag, true);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class Poll {
 	    config: PollConfig;
@@ -229,6 +277,7 @@ export namespace engine {
 		    return a;
 		}
 	}
+	
 	
 	
 	export class WriteRequest {
@@ -277,6 +326,78 @@ export namespace main {
 	        this.repo = source["repo"];
 	        this.canInstall = source["canInstall"];
 	    }
+	}
+	export class ImportPreview {
+	    path: string;
+	    fileName: string;
+	    rows: string[][];
+	    totalRows: number;
+	    options: profile.ImportOptions;
+	    fields: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ImportPreview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.fileName = source["fileName"];
+	        this.rows = source["rows"];
+	        this.totalRows = source["totalRows"];
+	        this.options = this.convertValues(source["options"], profile.ImportOptions);
+	        this.fields = source["fields"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ImportResult {
+	    profile: profile.Profile;
+	    warnings: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ImportResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.profile = this.convertValues(source["profile"], profile.Profile);
+	        this.warnings = source["warnings"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class MissingPort {
 	    connectionId: string;
@@ -353,6 +474,20 @@ export namespace main {
 		}
 	}
 	
+	export class ProfileFolders {
+	    user: string;
+	    shared: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProfileFolders(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.user = source["user"];
+	        this.shared = source["shared"];
+	    }
+	}
 	export class UpdateState {
 	    status: string;
 	    release?: update.Release;
@@ -394,6 +529,130 @@ export namespace main {
 
 }
 
+export namespace profile {
+	
+	export class ImportOptions {
+	    headerRow: number;
+	    mapping: Record<string, number>;
+	    addressMode: string;
+	    defaultFunction: number;
+	    byteOrder: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ImportOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.headerRow = source["headerRow"];
+	        this.mapping = source["mapping"];
+	        this.addressMode = source["addressMode"];
+	        this.defaultFunction = source["defaultFunction"];
+	        this.byteOrder = source["byteOrder"];
+	    }
+	}
+	export class Register {
+	    address: number;
+	    function: number;
+	    name: string;
+	    format: string;
+	    gain: number;
+	    offset: number;
+	    unit: string;
+	    decimals: number;
+	    note?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Register(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.address = source["address"];
+	        this.function = source["function"];
+	        this.name = source["name"];
+	        this.format = source["format"];
+	        this.gain = source["gain"];
+	        this.offset = source["offset"];
+	        this.unit = source["unit"];
+	        this.decimals = source["decimals"];
+	        this.note = source["note"];
+	    }
+	}
+	export class Profile {
+	    format: string;
+	    version: number;
+	    name: string;
+	    manufacturer: string;
+	    model: string;
+	    description: string;
+	    defaultSlaveId: number;
+	    registers: Register[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Profile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.format = source["format"];
+	        this.version = source["version"];
+	        this.name = source["name"];
+	        this.manufacturer = source["manufacturer"];
+	        this.model = source["model"];
+	        this.description = source["description"];
+	        this.defaultSlaveId = source["defaultSlaveId"];
+	        this.registers = this.convertValues(source["registers"], Register);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class Summary {
+	    id: string;
+	    source: string;
+	    name: string;
+	    manufacturer: string;
+	    model: string;
+	    registers: number;
+	    path: string;
+	    error?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Summary(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.source = source["source"];
+	        this.name = source["name"];
+	        this.manufacturer = source["manufacturer"];
+	        this.model = source["model"];
+	        this.registers = source["registers"];
+	        this.path = source["path"];
+	        this.error = source["error"];
+	    }
+	}
+
+}
+
 export namespace settings {
 	
 	export class Settings {
@@ -402,6 +661,7 @@ export namespace settings {
 	    skippedVersion: string;
 	    lastUpdateCheckAt: number;
 	    recentWorkspaces: string[];
+	    sharedProfileDir: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -414,6 +674,7 @@ export namespace settings {
 	        this.skippedVersion = source["skippedVersion"];
 	        this.lastUpdateCheckAt = source["lastUpdateCheckAt"];
 	        this.recentWorkspaces = source["recentWorkspaces"];
+	        this.sharedProfileDir = source["sharedProfileDir"];
 	    }
 	}
 

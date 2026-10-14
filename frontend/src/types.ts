@@ -33,6 +33,17 @@ export interface PollConfig {
   format: string
   plcAddressing: boolean
   cellFormats: Record<string, string>
+  tags: Record<string, Tag>
+}
+
+/** Register name and scaling: shown = raw × gain + offset. */
+export interface Tag {
+  name: string
+  gain: number
+  offset: number
+  unit: string
+  decimals: number // -1 = automatic
+  note?: string
 }
 
 export interface Cell {
@@ -41,6 +52,9 @@ export interface Cell {
   value: string
   span: number
   format: string
+  name?: string
+  unit?: string
+  rawText?: string
 }
 
 export interface PollState {
@@ -213,4 +227,71 @@ export interface LoadResult {
   warnings: string[]
   missingPorts: MissingPort[]
   ports: string[]
+}
+
+// ---------- device profiles ----------
+
+export interface ProfileRegister {
+  address: number
+  function: number
+  name: string
+  format: string
+  gain: number
+  offset: number
+  unit: string
+  decimals: number
+  note?: string
+}
+
+export interface Profile {
+  format: string
+  version: number
+  name: string
+  manufacturer: string
+  model: string
+  description: string
+  defaultSlaveId: number
+  registers: ProfileRegister[]
+}
+
+export type ProfileSource = 'bundled' | 'user' | 'shared'
+
+export interface ProfileSummary {
+  id: string
+  source: ProfileSource
+  name: string
+  manufacturer: string
+  model: string
+  registers: number
+  path: string
+  error?: string
+}
+
+export type ImportField = 'address' | 'function' | 'name' | 'format' | 'gain' | 'offset' | 'unit' | 'decimals' | 'note'
+
+export interface ImportOptions {
+  headerRow: number
+  mapping: Partial<Record<ImportField, number>>
+  addressMode: 'zero' | 'one' | 'modicon'
+  defaultFunction: number
+  byteOrder: 'abcd' | 'cdab' | 'badc' | 'dcba'
+}
+
+export interface ImportPreview {
+  path: string
+  fileName: string
+  rows: string[][]
+  totalRows: number
+  options: ImportOptions
+  fields: ImportField[]
+}
+
+export interface ImportResult {
+  profile: Profile
+  warnings: string[]
+}
+
+export interface ProfileFolders {
+  user: string
+  shared: string
 }
