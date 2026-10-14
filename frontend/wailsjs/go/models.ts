@@ -23,6 +23,102 @@ export namespace datafmt {
 
 export namespace engine {
 	
+	export class Alarm {
+	    id: string;
+	    pollId: string;
+	    address: number;
+	    window: string;
+	    name: string;
+	    unit: string;
+	    level: string;
+	    severity: string;
+	    value: number;
+	    limit: number;
+	    message: string;
+	    active: boolean;
+	    acked: boolean;
+	    since: number;
+	    clearedAt: number;
+	    ackedAt: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Alarm(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.pollId = source["pollId"];
+	        this.address = source["address"];
+	        this.window = source["window"];
+	        this.name = source["name"];
+	        this.unit = source["unit"];
+	        this.level = source["level"];
+	        this.severity = source["severity"];
+	        this.value = source["value"];
+	        this.limit = source["limit"];
+	        this.message = source["message"];
+	        this.active = source["active"];
+	        this.acked = source["acked"];
+	        this.since = source["since"];
+	        this.clearedAt = source["clearedAt"];
+	        this.ackedAt = source["ackedAt"];
+	    }
+	}
+	export class AlarmEvent {
+	    t: number;
+	    kind: string;
+	    id: string;
+	    window: string;
+	    name: string;
+	    level: string;
+	    value: number;
+	    limit: number;
+	    unit: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AlarmEvent(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.t = source["t"];
+	        this.kind = source["kind"];
+	        this.id = source["id"];
+	        this.window = source["window"];
+	        this.name = source["name"];
+	        this.level = source["level"];
+	        this.value = source["value"];
+	        this.limit = source["limit"];
+	        this.unit = source["unit"];
+	        this.message = source["message"];
+	    }
+	}
+	export class AlarmLimits {
+	    enabled: boolean;
+	    hiHi?: number;
+	    hi?: number;
+	    lo?: number;
+	    loLo?: number;
+	    deadband: number;
+	    onState?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new AlarmLimits(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.hiHi = source["hiHi"];
+	        this.hi = source["hi"];
+	        this.lo = source["lo"];
+	        this.loLo = source["loLo"];
+	        this.deadband = source["deadband"];
+	        this.onState = source["onState"];
+	    }
+	}
 	export class Cell {
 	    address: number;
 	    raw: number;
@@ -34,6 +130,7 @@ export namespace engine {
 	    rawText?: string;
 	    num: number;
 	    hasNum: boolean;
+	    alarm?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Cell(source);
@@ -51,6 +148,7 @@ export namespace engine {
 	        this.rawText = source["rawText"];
 	        this.num = source["num"];
 	        this.hasNum = source["hasNum"];
+	        this.alarm = source["alarm"];
 	    }
 	}
 	export class ConnectionConfig {
@@ -471,6 +569,7 @@ export namespace engine {
 	    unit: string;
 	    decimals: number;
 	    note?: string;
+	    alarm?: AlarmLimits;
 	
 	    static createFrom(source: any = {}) {
 	        return new Tag(source);
@@ -484,7 +583,26 @@ export namespace engine {
 	        this.unit = source["unit"];
 	        this.decimals = source["decimals"];
 	        this.note = source["note"];
+	        this.alarm = this.convertValues(source["alarm"], AlarmLimits);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class PollConfig {
 	    id: string;
@@ -500,6 +618,7 @@ export namespace engine {
 	    cellFormats: Record<number, string>;
 	    tags: Record<number, Tag>;
 	    record: boolean;
+	    commAlarm: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new PollConfig(source);
@@ -520,6 +639,7 @@ export namespace engine {
 	        this.cellFormats = source["cellFormats"];
 	        this.tags = this.convertValues(source["tags"], Tag, true);
 	        this.record = source["record"];
+	        this.commAlarm = source["commAlarm"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1088,6 +1208,7 @@ export namespace profile {
 	    unit: string;
 	    decimals: number;
 	    note?: string;
+	    alarm?: engine.AlarmLimits;
 	
 	    static createFrom(source: any = {}) {
 	        return new Register(source);
@@ -1104,7 +1225,26 @@ export namespace profile {
 	        this.unit = source["unit"];
 	        this.decimals = source["decimals"];
 	        this.note = source["note"];
+	        this.alarm = this.convertValues(source["alarm"], engine.AlarmLimits);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class Profile {
 	    format: string;

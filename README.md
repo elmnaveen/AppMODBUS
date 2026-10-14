@@ -25,6 +25,7 @@ with a **React + TypeScript** UI.
 | Simulator | Built-in Modbus slave (every connection type above) with an editable data table, optional live demo values, optional valid-address ranges per table, function 08 counters and 43/14 identification |
 | Workspaces | Save/open `.mbw` files (connections, windows, formats, layout, simulator data); recent list; session autosave and restore on start-up with polling stopped; prompts to remap missing serial ports |
 | Tags & profiles | Name, gain/offset scaling and units per register; device profiles (bundled, personal and shared-folder) applied to any slave ID; import register maps from CSV/Excel with Modicon address detection |
+| Alarms | High-high / high / low / low-low limits with deadband per tag (in engineering units), bit state alarms, and a communication alarm after 3 failed reads. Alarm cells are coloured and marked; the alarm list shows severity, value, limit and live value, with acknowledge (single or all) and an optional sound. History is logged per day and can be exported to CSV; limits travel with workspaces and device profiles |
 | Recording | **REC** per poll window stores values (in engineering units) on disk; Data management: retention (default 30 days), size cap (default 2 GB, oldest first), storage folder, export to CSV/Excel, delete by series or date range |
 | Charts | Chart tabs that combine up to 8 registers from any poll windows, plus an inline chart under each poll window. Left and right Y axes (one per unit), step lanes for coils and discrete inputs, min/max/avg/last per line, crosshair tooltip, drag to zoom, PNG and CSV export. Ranges from 1 minute to 30 days; 1 hour and longer also draw recorded history |
 | Themes | Light and dark |
@@ -34,6 +35,8 @@ Several poll windows can share one connection. Requests are queued per connectio
 never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time to turn around.
 
 ![Chart tab with two Y axes](docs/screenshots/chart.png)
+
+![Alarms](docs/screenshots/alarms.png)
 
 <p>
   <img src="docs/screenshots/chart-inline.png" width="49%" alt="Inline chart under a poll window">
@@ -128,4 +131,4 @@ frontend/src/charts      Charts: live buffer, history merge, uPlot rendering
 
 ## Planned next
 
-Alarms and limits per tag, and test sequences with pass/fail reports.
+Test sequences with pass/fail reports.

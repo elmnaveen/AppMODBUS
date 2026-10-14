@@ -5,7 +5,7 @@ import { Modal } from './Modal'
 
 export const blankPoll = (connectionId: string): PollConfig => ({
   id: '', name: '', connectionId, slaveId: 1, function: 3, address: 0, quantity: 10,
-  scanRateMs: 1000, format: 'signed', plcAddressing: false, cellFormats: {}, tags: {}, record: false,
+  scanRateMs: 1000, format: 'signed', plcAddressing: false, cellFormats: {}, tags: {}, record: false, commAlarm: false,
 })
 
 interface Props {
@@ -101,6 +101,11 @@ export function PollDialog({ poll, connections, formats, onClose, onSaved }: Pro
             <span className="hint">Right-click a cell to override the format of a single value.</span>
           </>
         )}
+        <label className="lbl">Alarms</label>
+        <label className="check">
+          <input type="checkbox" checked={!!form.commAlarm} onChange={(e) => set('commAlarm', e.target.checked)} />
+          Raise an alarm after 3 failed reads in a row
+        </label>
         {error && <div className="alert full">{error}</div>}
       </div>
     </Modal>

@@ -2,6 +2,7 @@
 import * as Go from '../wailsjs/go/main/App'
 import { EventsOn } from '../wailsjs/runtime/runtime'
 import type {
+  Alarm, AlarmEvent,
   ConnectionStats, CounterValue, DeviceID, EchoResult, IDScanRequest, MapRange, MapScanRequest, NetworkScanRequest, ScanState,
   DataSettings, Sample, SeriesInfo,
   ImportOptions, ImportPreview, ImportResult, Profile, ProfileFolders, ProfileSummary, Tag,
@@ -113,6 +114,11 @@ export const api = {
   readDeviceIdentification: (connectionId: string, slaveId: number, code: number): Promise<DeviceID> =>
     g.ReadDeviceIdentification(connectionId, slaveId, code),
 
+  alarms: (): Promise<Alarm[]> => g.Alarms(),
+  ackAlarms: (ids: string[]): Promise<void> => g.AckAlarms(ids),
+  alarmHistory: (from: number, to: number, limit: number): Promise<AlarmEvent[]> => g.AlarmHistory(from, to, limit),
+  exportAlarmHistory: (from: number, to: number): Promise<{ path: string; rows: number }> => g.ExportAlarmHistory(from, to),
+
   appInfo: (): Promise<AppInfo> => g.AppInfo(),
   updateSettings: (): Promise<UpdateSettings> => g.UpdateSettings(),
   setUpdateSettings: (channel: string, autoCheck: boolean): Promise<UpdateSettings> => g.SetUpdateSettings(channel, autoCheck),
@@ -128,6 +134,7 @@ export const events = {
   onConnections: (cb: (c: ConnectionInfo[]) => void) => EventsOn('connections', cb),
   onTraffic: (cb: (t: TrafficEntry[]) => void) => EventsOn('traffic', cb),
   onRecording: (cb: (error: string) => void) => EventsOn('recording:status', cb),
+  onAlarms: (cb: (a: Alarm[]) => void) => EventsOn('alarms', cb),
   onScan: (cb: (s: ScanState) => void) => EventsOn('scan', cb),
   onWorkspace: (cb: (s: WorkspaceState) => void) => EventsOn('workspace:state', cb),
   onUpdateState: (cb: (s: UpdateState) => void) => EventsOn('update:state', cb),

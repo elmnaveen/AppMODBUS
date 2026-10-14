@@ -218,7 +218,13 @@ func (e *Engine) SetTag(pollID string, address int, t *Tag) error {
 		p.cfg.Tags[address] = *t
 	}
 	p.rebuildCells()
+	// Re-check alarms against the new limits with the data already shown.
+	var trans []transition
+	if p.st.HasData {
+		trans = p.evaluateAlarms(nil, false)
+	}
 	p.mu.Unlock()
+	e.alarmsChanged(e.applyTransitions(trans))
 	e.publish(p)
 	e.changed()
 	return nil

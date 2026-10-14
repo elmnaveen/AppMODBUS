@@ -2,11 +2,18 @@ import { memo, useRef, useState } from 'react'
 import { api, errText } from '../api'
 import { Chart } from '../charts/Chart'
 import { addSeries, defaultInline, MAX_SERIES, resolveSeries, type ChartSeries, type InlineChart } from '../charts/model'
-import { fc2, isBitFunction, isWritable, type Cell, type ConnectionInfo, type FormatInfo, type Poll } from '../types'
+import { ALARM_LEVEL_LABELS, fc2, isBitFunction, isWritable, type AlarmLevel, type Cell, type ConnectionInfo, type FormatInfo, type Poll } from '../types'
 import { ContextMenu } from './ContextMenu'
 import { IconChart, IconGear, IconOnce, IconPlay, IconStop, IconX } from './Icons'
 
 const ROWS = 10
+
+const alarmClass = (l: AlarmLevel) => (l === 'hihi' || l === 'lolo' || l === 'comm' ? 'crit' : 'warn')
+/** Arrow for the limit side plus a label in the tooltip, so state is not colour alone. */
+function AlarmMark({ level }: { level: AlarmLevel }) {
+  const glyph = level === 'hihi' ? '⏶⏶' : level === 'hi' ? '⏶' : level === 'lolo' ? '⏷⏷' : level === 'lo' ? '⏷' : '!'
+  return <span className="al-mark" title={`${ALARM_LEVEL_LABELS[level]} alarm`}>{glyph}</span>
+}
 
 interface Props {
   poll: Poll
@@ -146,12 +153,14 @@ function PollWindowImpl({
                     {cell.span === 0 ? (
                       <span className="v cont">⋯</span>
                     ) : bits ? (
-                      <span key={cell.value} className={`v${changed.has(cell.address) ? ' chg' : ''}`}>
+                      <span key={cell.value} className={`v${changed.has(cell.address) ? ' chg' : ''}${cell.alarm ? ` al ${alarmClass(cell.alarm)}` : ''}`}>
+                        {cell.alarm && <AlarmMark level={cell.alarm} />}
                         {cell.value}
                         <span className={`bitdot${cell.value === '1' ? ' on' : ''}`} />
                       </span>
                     ) : (
-                      <span key={cell.value} className={`v${override ? ' override' : ''}${cell.rawText ? ' scaled' : ''}${changed.has(cell.address) ? ' chg' : ''}`}>
+                      <span key={cell.value} className={`v${override ? ' override' : ''}${cell.rawText ? ' scaled' : ''}${changed.has(cell.address) ? ' chg' : ''}${cell.alarm ? ` al ${alarmClass(cell.alarm)}` : ''}`}>
+                        {cell.alarm && <AlarmMark level={cell.alarm} />}
                         {cell.value}{cell.unit && <small className="u">{cell.unit}</small>}
                       </span>
                     )}

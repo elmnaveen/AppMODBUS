@@ -38,6 +38,7 @@ export interface PollConfig {
   cellFormats: Record<string, string>
   tags: Record<string, Tag>
   record: boolean
+  commAlarm?: boolean
 }
 
 /** Register name and scaling: shown = raw × gain + offset. */
@@ -48,6 +49,56 @@ export interface Tag {
   unit: string
   decimals: number // -1 = automatic
   note?: string
+  alarm?: AlarmLimits | null
+}
+
+/** Alarm limits of a tag; null limits are off. */
+export interface AlarmLimits {
+  enabled: boolean
+  hiHi: number | null
+  hi: number | null
+  lo: number | null
+  loLo: number | null
+  deadband: number
+  onState: number | null // bits: alarm while the bit equals this
+}
+
+export type AlarmLevel = 'hihi' | 'hi' | 'lo' | 'lolo' | 'state' | 'comm'
+
+export const ALARM_LEVEL_LABELS: Record<AlarmLevel, string> = {
+  hihi: 'High-high', hi: 'High', lo: 'Low', lolo: 'Low-low', state: 'State', comm: 'Communication',
+}
+
+export interface Alarm {
+  id: string
+  pollId: string
+  address: number
+  window: string
+  name: string
+  unit: string
+  level: AlarmLevel
+  severity: 'critical' | 'warning'
+  value: number
+  limit: number
+  message: string
+  active: boolean
+  acked: boolean
+  since: number
+  clearedAt: number
+  ackedAt: number
+}
+
+export interface AlarmEvent {
+  t: number
+  kind: 'active' | 'level' | 'cleared' | 'ack'
+  id: string
+  window: string
+  name: string
+  level: AlarmLevel
+  value: number
+  limit: number
+  unit: string
+  message: string
 }
 
 export interface Cell {
@@ -61,6 +112,7 @@ export interface Cell {
   rawText?: string
   num: number
   hasNum: boolean
+  alarm?: AlarmLevel
 }
 
 export interface PollState {

@@ -29,6 +29,8 @@ type App struct {
 
 	rec    *recorder.Recorder
 	recErr atomic.Value // string
+
+	alarmLog *engine.AlarmLog
 }
 
 // NewApp creates the application.
@@ -39,6 +41,7 @@ func (a *App) startup(ctx context.Context) {
 	a.engine = engine.New(func(event string, data any) { runtime.EventsEmit(ctx, event, data) })
 	a.engine.OnChange = a.markDirty
 	a.startRecorder()
+	a.startAlarmLog()
 	a.startUpdater()
 }
 

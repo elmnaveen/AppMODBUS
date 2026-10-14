@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, errText, events } from './api'
 import { ConnectionsDialog, blankConnection } from './components/ConnectionsDialog'
 import {
-  IconBolt, IconBook, IconChart, IconPulse, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
+  IconBell, IconBolt, IconBook, IconChart, IconPulse, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
 } from './components/Icons'
 import { PollDialog } from './components/PollDialog'
 import { PollWindow } from './components/PollWindow'
@@ -11,6 +11,7 @@ import { TrafficPanel } from './components/TrafficPanel'
 import { AboutDialog, UpdateBanner, useUpdates } from './components/Updates'
 import { DataDialog } from './components/DataDialog'
 import { DiagnosticsDialog } from './components/Diagnostics'
+import { AlarmsPanel, beep, loadAlarmSound } from './components/AlarmsPanel'
 import { ProfilesDialog } from './components/Profiles'
 import { TagDialog } from './components/TagDialog'
 import { FileMenu, PortRemapDialog, UnsavedDialog } from './components/Workspace'
@@ -22,7 +23,7 @@ import {
   addSeries, emptyCharts, MAX_SERIES, newChartId, parseCharts, pruneCharts,
   type ChartDef, type ChartSeries, type ChartsDoc, type InlineChart,
 } from './charts/model'
-import { fc2, type AppInfo, type Cell, type LoadResult, type WorkspaceState, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
+import { fc2, type Alarm, type AppInfo, type Cell, type LoadResult, type WorkspaceState, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
 
 type Dialog =
   | { kind: 'connections'; id?: string }
@@ -56,6 +57,10 @@ export default function App() {
   const [restored, setRestored] = useState(false)
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
   const [remap, setRemap] = useState<LoadResult | null>(null)
+  const [alarms, setAlarms] = useState<Alarm[]>([])
+  const [showAlarms, setShowAlarms] = useState(false)
+  const [alarmSound, setAlarmSound] = useState(loadAlarmSound)
+  const seenAlarms = useRef(new Set<string>())
   const [charts, setCharts] = useState<ChartsDoc>(emptyCharts)
   const sentCharts = useRef(JSON.stringify(emptyCharts()))
 
@@ -68,12 +73,20 @@ export default function App() {
     api.appInfo().then(setInfo)
     api.formats().then(setFormats)
     api.restoreSession().then(applyLoad).finally(() => setRestored(true))
+    api.alarms().then(setAlarms)
     const offs = [
       events.onPoll((p) => {
         live.ingest(p)
         setPolls((cur) => ({ ...cur, [p.config.id]: p }))
       }),
       events.onConnections(setConnections),
+      events.onAlarms((list) => {
+        setAlarms(list)
+        // Open the panel when a new alarm is raised (not on every update).
+        const fresh = list.some((a) => a.active && !a.acked && !seenAlarms.current.has(`${a.id}@${a.since}`))
+        list.forEach((a) => seenAlarms.current.add(`${a.id}@${a.since}`))
+        if (fresh) setShowAlarms(true)
+      }),
       events.onWorkspace(setWs),
     ]
     return () => offs.forEach((off) => off())
@@ -103,6 +116,16 @@ export default function App() {
   useEffect(() => {
     if (restored) api.setLayout({ view, activeId: active, showTraffic, showSimulator: showSim })
   }, [restored, view, active, showTraffic, showSim])
+
+  // Beep while alarms are unacknowledged.
+  const unacked = alarms.filter((a) => !a.acked)
+  const unackedCritical = unacked.some((a) => a.severity === 'critical')
+  useEffect(() => {
+    if (!alarmSound || unacked.length === 0) return
+    beep(unackedCritical)
+    const t = setInterval(() => beep(unackedCritical), 3000)
+    return () => clearInterval(t)
+  }, [alarmSound, unacked.length > 0, unackedCritical])
 
   // So are the charts.
   useEffect(() => {
@@ -307,6 +330,14 @@ export default function App() {
         <button className={`btn icon${view === 'tabs' ? ' on' : ''}`} title="Tabbed view" onClick={() => setView('tabs')}><IconTabs /></button>
         <button className={`btn icon${view === 'tile' ? ' on' : ''}`} title="Tile all windows" onClick={() => setView('tile')}><IconTile /></button>
         <span className="tb-spacer" />
+        <button
+          className={`btn has-badge${showAlarms ? ' on' : ''}`}
+          title={unacked.length ? `${unacked.length} unacknowledged alarm(s)` : 'Alarms'}
+          onClick={() => setShowAlarms((v) => !v)}
+        >
+          <IconBell />Alarms
+          {unacked.length > 0 && <span className={`count-badge ${unackedCritical ? 'critical' : 'warning'}`}>{unacked.length}</span>}
+        </button>
         <button className={`btn${showTraffic ? ' on' : ''}`} onClick={() => setShowTraffic((v) => !v)}><IconList />Traffic</button>
         <button className={`btn${showSim ? ' on' : ''}`} onClick={() => setShowSim((v) => !v)}><IconServer />Simulator</button>
         <button className="btn icon" title={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={toggleTheme}>{theme === 'dark' ? <IconSun /> : <IconMoon />}</button>
@@ -385,6 +416,16 @@ export default function App() {
       </div>
 
       <TrafficPanel visible={showTraffic} onClose={() => setShowTraffic(false)} onError={onError} />
+      <AlarmsPanel
+        visible={showAlarms}
+        alarms={alarms}
+        polls={polls}
+        sound={alarmSound}
+        onSound={setAlarmSound}
+        onClose={() => setShowAlarms(false)}
+        onError={onError}
+        onInfo={onInfo}
+      />
 
       <footer className="statusbar">
         {connections.length === 0 && <span className="item">No connection</span>}
@@ -395,6 +436,11 @@ export default function App() {
           </span>
         ))}
         <span style={{ flex: 1 }} />
+        {alarms.some((a) => a.active) && (
+          <span className={`item alarm-status ${alarms.some((a) => a.active && a.severity === 'critical') ? 'critical' : 'warning'}`} style={{ cursor: 'pointer' }} onClick={() => setShowAlarms(true)}>
+            <IconBell />{alarms.filter((a) => a.active).length} active alarm(s)
+          </span>
+        )}
         {order.some((id) => polls[id]?.config.record && polls[id]?.state.running) && (
           <span className="item rec-status"><span className="rec-dot" />Recording {order.filter((id) => polls[id]?.config.record).length} window(s)</span>
         )}
