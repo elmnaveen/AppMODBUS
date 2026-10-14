@@ -94,7 +94,7 @@ func TestExceptionAndTimeout(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := e.conn(conn.ID)
-	_, err := c.client.Do(1, modbus.PDU{Function: 0x2B, Data: []byte{0x0E, 1, 0}}, 200*time.Millisecond)
+	_, err := c.client.Do(1, modbus.PDU{Function: 0x14, Data: []byte{0x07, 0x06, 0, 1, 0, 0, 0, 1}}, 200*time.Millisecond)
 	if !errors.As(err, &ex) || ex.Code != modbus.ExIllegalFunction {
 		t.Fatalf("expected illegal function, got %v", err)
 	}

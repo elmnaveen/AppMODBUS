@@ -247,3 +247,22 @@ func (a *App) DeleteRecordedRange(ids []string, from, to int64) error {
 	}
 	return a.rec.DeleteRange(ids, from, to)
 }
+
+// SeriesRef identifies where a charted value comes from.
+type SeriesRef struct {
+	Connection string `json:"connection"` // connection summary, as shown in the UI
+	SlaveID    int    `json:"slaveId"`
+	Function   int    `json:"function"`
+	Address    int    `json:"address"`
+	Format     string `json:"format"`
+}
+
+// SeriesIDs returns the recording ID of each reference, so charts can load
+// recorded history for the registers they show.
+func (a *App) SeriesIDs(refs []SeriesRef) []string {
+	ids := make([]string, len(refs))
+	for i, r := range refs {
+		ids[i] = recorder.SeriesID(r.Connection, r.SlaveID, r.Function, r.Address, r.Format)
+	}
+	return ids
+}

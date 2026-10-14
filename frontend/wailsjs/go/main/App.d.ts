@@ -5,6 +5,7 @@ import {engine} from '../models';
 import {profile} from '../models';
 import {datafmt} from '../models';
 import {recorder} from '../models';
+import {modbus} from '../models';
 import {workspace} from '../models';
 import {settings} from '../models';
 import {simulator} from '../models';
@@ -20,6 +21,8 @@ export function CheckForUpdates():Promise<main.UpdateState>;
 export function ChooseRecordingsFolder():Promise<main.DataSettings>;
 
 export function ChooseSharedProfileFolder():Promise<string>;
+
+export function ClearDiagCounters(arg1:string,arg2:number):Promise<void>;
 
 export function ClearSharedProfileFolder():Promise<void>;
 
@@ -39,7 +42,11 @@ export function DeleteRecordedRange(arg1:Array<string>,arg2:number,arg3:number):
 
 export function DeleteRecordedSeries(arg1:Array<string>):Promise<void>;
 
+export function DiagCounters(arg1:string,arg2:number):Promise<Array<main.CounterValue>>;
+
 export function Disconnect(arg1:string):Promise<void>;
+
+export function EchoTest(arg1:string,arg2:number,arg3:number):Promise<main.EchoResult>;
 
 export function ExportProfile(arg1:string):Promise<string>;
 
@@ -73,6 +80,8 @@ export function ParseValue(arg1:string,arg2:string):Promise<Array<number>>;
 
 export function Polls():Promise<Array<engine.Poll>>;
 
+export function PollsFromMap(arg1:string,arg2:number,arg3:Array<engine.MapRange>):Promise<Array<engine.Poll>>;
+
 export function PreviewTable(arg1:string):Promise<main.ImportPreview>;
 
 export function ProfileFolders():Promise<main.ProfileFolders>;
@@ -80,6 +89,8 @@ export function ProfileFolders():Promise<main.ProfileFolders>;
 export function ProfileFromPoll(arg1:string,arg2:string):Promise<profile.Profile>;
 
 export function QuerySeries(arg1:string,arg2:number,arg3:number,arg4:number):Promise<Array<recorder.Sample>>;
+
+export function ReadDeviceIdentification(arg1:string,arg2:number,arg3:number):Promise<modbus.DeviceID>;
 
 export function ReadOnce(arg1:string):Promise<void>;
 
@@ -89,9 +100,13 @@ export function RemapSerialPort(arg1:string,arg2:string):Promise<void>;
 
 export function ResetRecordingsFolder():Promise<main.DataSettings>;
 
+export function ResetStatistics(arg1:string):Promise<void>;
+
 export function RestoreSession():Promise<main.LoadResult>;
 
 export function SaveConnection(arg1:engine.ConnectionConfig):Promise<engine.ConnectionInfo>;
+
+export function SaveExportFile(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<string>;
 
 export function SaveProfile(arg1:profile.Profile,arg2:string,arg3:string):Promise<string>;
 
@@ -101,7 +116,11 @@ export function SaveWorkspace():Promise<string>;
 
 export function SaveWorkspaceAs():Promise<string>;
 
+export function ScanState():Promise<engine.ScanState>;
+
 export function SerialPorts():Promise<Array<string>>;
+
+export function SeriesIDs(arg1:Array<main.SeriesRef>):Promise<Array<string>>;
 
 export function SetCellFormat(arg1:string,arg2:number,arg3:string):Promise<void>;
 
@@ -135,11 +154,21 @@ export function SkipVersion(arg1:string):Promise<void>;
 
 export function StartAll():Promise<void>;
 
+export function StartIDScan(arg1:engine.IDScanRequest):Promise<void>;
+
+export function StartMapScan(arg1:engine.MapScanRequest):Promise<void>;
+
+export function StartNetworkScan(arg1:engine.NetworkScanRequest):Promise<void>;
+
 export function StartPoll(arg1:string):Promise<void>;
+
+export function Statistics(arg1:string):Promise<Array<engine.ConnectionStats>>;
 
 export function StopAll():Promise<void>;
 
 export function StopPoll(arg1:string):Promise<void>;
+
+export function StopScan():Promise<void>;
 
 export function UpdatePoll(arg1:engine.PollConfig):Promise<engine.Poll>;
 

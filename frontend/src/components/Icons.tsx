@@ -37,3 +37,5 @@ export const IconBook = () => <I><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1
 export const IconUpload = () => <I><path d="M12 20V9M7 14l5-5 5 5M5 4h14" /></I>
 export const IconCopy = () => <I><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" /></I>
 export const IconDatabase = () => <I><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" /></I>
+export const IconChart = () => <I><path d="M4 4v16h16" /><path d="M7 15l4-5 3 3 5-6" /></I>
+export const IconPulse = () => <I><path d="M3 12h4l3-8 4 16 3-8h4" /></I>

@@ -26,6 +26,10 @@ export function ChooseSharedProfileFolder() {
   return window['go']['main']['App']['ChooseSharedProfileFolder']();
 }
 
+export function ClearDiagCounters(arg1, arg2) {
+  return window['go']['main']['App']['ClearDiagCounters'](arg1, arg2);
+}
+
 export function ClearSharedProfileFolder() {
   return window['go']['main']['App']['ClearSharedProfileFolder']();
 }
@@ -62,8 +66,16 @@ export function DeleteRecordedSeries(arg1) {
   return window['go']['main']['App']['DeleteRecordedSeries'](arg1);
 }
 
+export function DiagCounters(arg1, arg2) {
+  return window['go']['main']['App']['DiagCounters'](arg1, arg2);
+}
+
 export function Disconnect(arg1) {
   return window['go']['main']['App']['Disconnect'](arg1);
+}
+
+export function EchoTest(arg1, arg2, arg3) {
+  return window['go']['main']['App']['EchoTest'](arg1, arg2, arg3);
 }
 
 export function ExportProfile(arg1) {
@@ -130,6 +142,10 @@ export function Polls() {
   return window['go']['main']['App']['Polls']();
 }
 
+export function PollsFromMap(arg1, arg2, arg3) {
+  return window['go']['main']['App']['PollsFromMap'](arg1, arg2, arg3);
+}
+
 export function PreviewTable(arg1) {
   return window['go']['main']['App']['PreviewTable'](arg1);
 }
@@ -144,6 +160,10 @@ export function ProfileFromPoll(arg1, arg2) {
 
 export function QuerySeries(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['QuerySeries'](arg1, arg2, arg3, arg4);
+}
+
+export function ReadDeviceIdentification(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ReadDeviceIdentification'](arg1, arg2, arg3);
 }
 
 export function ReadOnce(arg1) {
@@ -162,12 +182,20 @@ export function ResetRecordingsFolder() {
   return window['go']['main']['App']['ResetRecordingsFolder']();
 }
 
+export function ResetStatistics(arg1) {
+  return window['go']['main']['App']['ResetStatistics'](arg1);
+}
+
 export function RestoreSession() {
   return window['go']['main']['App']['RestoreSession']();
 }
 
 export function SaveConnection(arg1) {
   return window['go']['main']['App']['SaveConnection'](arg1);
+}
+
+export function SaveExportFile(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['SaveExportFile'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function SaveProfile(arg1, arg2, arg3) {
@@ -186,8 +214,16 @@ export function SaveWorkspaceAs() {
   return window['go']['main']['App']['SaveWorkspaceAs']();
 }
 
+export function ScanState() {
+  return window['go']['main']['App']['ScanState']();
+}
+
 export function SerialPorts() {
   return window['go']['main']['App']['SerialPorts']();
+}
+
+export function SeriesIDs(arg1) {
+  return window['go']['main']['App']['SeriesIDs'](arg1);
 }
 
 export function SetCellFormat(arg1, arg2, arg3) {
@@ -254,8 +290,24 @@ export function StartAll() {
   return window['go']['main']['App']['StartAll']();
 }
 
+export function StartIDScan(arg1) {
+  return window['go']['main']['App']['StartIDScan'](arg1);
+}
+
+export function StartMapScan(arg1) {
+  return window['go']['main']['App']['StartMapScan'](arg1);
+}
+
+export function StartNetworkScan(arg1) {
+  return window['go']['main']['App']['StartNetworkScan'](arg1);
+}
+
 export function StartPoll(arg1) {
   return window['go']['main']['App']['StartPoll'](arg1);
+}
+
+export function Statistics(arg1) {
+  return window['go']['main']['App']['Statistics'](arg1);
 }
 
 export function StopAll() {
@@ -264,6 +316,10 @@ export function StopAll() {
 
 export function StopPoll(arg1) {
   return window['go']['main']['App']['StopPoll'](arg1);
+}
+
+export function StopScan() {
+  return window['go']['main']['App']['StopScan']();
 }
 
 export function UpdatePoll(arg1) {

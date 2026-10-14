@@ -56,10 +56,28 @@ func RTUResponseLength(head []byte) int {
 	switch fc {
 	case FuncReadCoils, FuncReadDiscreteInputs, FuncReadHoldingRegisters, FuncReadInputRegisters:
 		return 5 + int(head[2])
-	case FuncWriteSingleCoil, FuncWriteSingleRegister, FuncWriteMultipleCoils, FuncWriteMultipleRegisters:
+	case FuncWriteSingleCoil, FuncWriteSingleRegister, FuncWriteMultipleCoils, FuncWriteMultipleRegisters, FuncDiagnostics:
 		return 8
 	}
 	return 0
+}
+
+// DeviceIDFrameLength works out the length of an RTU FC43/14 response
+// from the bytes received so far. It returns the total length, or 0 and
+// how many bytes are needed before it can tell.
+func DeviceIDFrameLength(b []byte) (total, need int) {
+	const head = 8 // unit, fc, MEI, code, conformity, more, next, count
+	if len(b) < head {
+		return 0, head
+	}
+	i := head
+	for k := 0; k < int(b[7]); k++ {
+		if len(b) < i+2 {
+			return 0, i + 2
+		}
+		i += 2 + int(b[i+1])
+	}
+	return i + 2, i + 2
 }
 
 // RTURequestLength returns the total length of an RTU request frame given
@@ -78,6 +96,10 @@ func RTURequestLength(head []byte) (length int, need int) {
 			return 0, 7
 		}
 		return 9 + int(head[6]), 7
+	case FuncDiagnostics:
+		return 8, 2
+	case FuncEncapsulated:
+		return 7, 2
 	}
 	return 0, 2
 }

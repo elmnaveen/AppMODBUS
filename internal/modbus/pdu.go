@@ -113,6 +113,10 @@ func FunctionName(fc byte) string {
 		return "Write Multiple Coils"
 	case FuncWriteMultipleRegisters:
 		return "Write Multiple Registers"
+	case FuncDiagnostics:
+		return "Diagnostics"
+	case FuncEncapsulated:
+		return "Read Device Identification"
 	}
 	return fmt.Sprintf("Function %02X", fc)
 }
@@ -235,6 +239,17 @@ func CheckResponse(req, resp PDU) error {
 	case FuncWriteMultipleCoils, FuncWriteMultipleRegisters:
 		if len(resp.Data) != 4 || string(resp.Data) != string(req.Data[:4]) {
 			return invalid("write response does not echo address/quantity")
+		}
+	case FuncDiagnostics:
+		if len(resp.Data) != 4 || string(resp.Data[:2]) != string(req.Data[:2]) {
+			return invalid("diagnostics response does not echo the sub-function")
+		}
+		if binary.BigEndian.Uint16(req.Data) == DiagReturnQueryData && string(resp.Data) != string(req.Data) {
+			return invalid("echo data differs")
+		}
+	case FuncEncapsulated:
+		if len(resp.Data) < 6 || len(req.Data) < 1 || resp.Data[0] != req.Data[0] {
+			return invalid("MEI type does not match the request")
 		}
 	}
 	return nil

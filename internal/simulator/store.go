@@ -4,6 +4,9 @@ package simulator
 
 import (
 	"encoding/binary"
+	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 
 	"appmodbus/internal/modbus"
@@ -26,6 +29,82 @@ type Store struct {
 	discrete []bool
 	holding  []uint16
 	input    []uint16
+	// limits restricts the addresses a table answers on (nil = all), so the
+	// simulator can stand in for a device with a sparse register map.
+	limits map[Table][]Span
+}
+
+// Span is an inclusive address range.
+type Span struct{ From, To int }
+
+// ParseRanges reads "0-99, 1000-1019, 2000" into spans. Blank means all.
+func ParseRanges(text string) ([]Span, error) {
+	var out []Span
+	for _, part := range strings.FieldsFunc(text, func(r rune) bool { return r == ',' || r == ';' || r == ' ' }) {
+		a, b, isRange := strings.Cut(part, "-")
+		from, err := strconv.Atoi(a)
+		if err != nil {
+			return nil, fmt.Errorf("invalid address %q", part)
+		}
+		to := from
+		if isRange {
+			if to, err = strconv.Atoi(b); err != nil {
+				return nil, fmt.Errorf("invalid address range %q", part)
+			}
+		}
+		if from < 0 || to > 0xFFFF || from > to {
+			return nil, fmt.Errorf("address range %q must be within 0-65535", part)
+		}
+		out = append(out, Span{from, to})
+	}
+	return out, nil
+}
+
+// SetLimits sets the valid address ranges per table ("" = whole table).
+func (s *Store) SetLimits(limits map[Table]string) error {
+	parsed := map[Table][]Span{}
+	for t, text := range limits {
+		spans, err := ParseRanges(text)
+		if err != nil {
+			return fmt.Errorf("%s: %w", t, err)
+		}
+		if len(spans) > 0 {
+			parsed[t] = spans
+		}
+	}
+	s.mu.Lock()
+	s.limits = parsed
+	s.mu.Unlock()
+	return nil
+}
+
+// allowed reports whether every address of the range is valid. Callers
+// hold s.mu.
+func (s *Store) allowed(t Table, address, quantity int) bool {
+	spans, ok := s.limits[t]
+	if !ok {
+		return true
+	}
+	end := address + quantity - 1
+	for _, sp := range spans {
+		if address >= sp.From && end <= sp.To {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Store) checkLimits(t Table, address, quantity int) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.allowed(t, address, quantity)
+}
+
+var tableOf = map[byte]Table{
+	modbus.FuncReadCoils: Coils, modbus.FuncReadDiscreteInputs: DiscreteInputs,
+	modbus.FuncReadHoldingRegisters: HoldingRegisters, modbus.FuncReadInputRegisters: InputRegisters,
+	modbus.FuncWriteSingleCoil: Coils, modbus.FuncWriteMultipleCoils: Coils,
+	modbus.FuncWriteSingleRegister: HoldingRegisters, modbus.FuncWriteMultipleRegisters: HoldingRegisters,
 }
 
 // NewStore returns an all-zero data store.
@@ -126,7 +205,7 @@ func (s *Store) Handle(req modbus.PDU) modbus.PDU {
 		if qty < 1 || qty > max {
 			return exception(fc, modbus.ExIllegalDataValue)
 		}
-		if addr+qty > 0x10000 {
+		if addr+qty > 0x10000 || !s.checkLimits(tableOf[fc], addr, qty) {
 			return exception(fc, modbus.ExIllegalDataAddress)
 		}
 		s.mu.RLock()
@@ -160,6 +239,9 @@ func (s *Store) Handle(req modbus.PDU) modbus.PDU {
 		if v != 0xFF00 && v != 0x0000 {
 			return exception(fc, modbus.ExIllegalDataValue)
 		}
+		if !s.checkLimits(Coils, u16(0), 1) {
+			return exception(fc, modbus.ExIllegalDataAddress)
+		}
 		s.mu.Lock()
 		s.coils[u16(0)] = v == 0xFF00
 		s.mu.Unlock()
@@ -168,6 +250,9 @@ func (s *Store) Handle(req modbus.PDU) modbus.PDU {
 	case modbus.FuncWriteSingleRegister:
 		if len(d) != 4 {
 			return exception(fc, modbus.ExIllegalDataValue)
+		}
+		if !s.checkLimits(HoldingRegisters, u16(0), 1) {
+			return exception(fc, modbus.ExIllegalDataAddress)
 		}
 		s.mu.Lock()
 		s.holding[u16(0)] = uint16(u16(2))
@@ -187,7 +272,7 @@ func (s *Store) Handle(req modbus.PDU) modbus.PDU {
 		if qty < 1 || qty > max || count != want || len(d) != 5+count {
 			return exception(fc, modbus.ExIllegalDataValue)
 		}
-		if addr+qty > 0x10000 {
+		if addr+qty > 0x10000 || !s.checkLimits(tableOf[fc], addr, qty) {
 			return exception(fc, modbus.ExIllegalDataAddress)
 		}
 		s.mu.Lock()

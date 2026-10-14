@@ -32,6 +32,9 @@ type Config struct {
 	// Animate makes input registers 0..9 and discrete inputs 0..7 change
 	// continuously so pollers have live data to show.
 	Animate bool `json:"animate"`
+	// Limits restricts each table to address ranges such as "0-99,200-219"
+	// (missing or blank = all 65536 addresses).
+	Limits map[Table]string `json:"limits,omitempty"`
 }
 
 // Status is reported to the UI.
@@ -59,7 +62,22 @@ type Server struct {
 	clients  atomic.Int32
 	lastErr  atomic.Value
 	addr     string
+
+	// Serial-line diagnostic counters (FC08).
+	counters [8]atomic.Uint32
 }
+
+// Indexes into Server.counters, in FC08 sub-function order (0x0B..0x12).
+const (
+	cntBusMsg = iota
+	cntCommErr
+	cntException
+	cntSlaveMsg
+	cntNoResponse
+	cntNAK
+	cntBusy
+	cntOverrun
+)
 
 // NewServer creates a stopped server with an empty store.
 func NewServer() *Server { return &Server{Store: NewStore()} }
@@ -80,6 +98,10 @@ func (s *Server) Start(cfg Config) error {
 	if cfg.SlaveID < 1 || cfg.SlaveID > 247 {
 		return fmt.Errorf("slave ID %d out of range 1..247", cfg.SlaveID)
 	}
+	if err := s.Store.SetLimits(cfg.Limits); err != nil {
+		return err
+	}
+	s.clearCounters()
 	s.stop = make(chan struct{})
 	s.closers = nil
 	s.conns = map[net.Conn]struct{}{}
@@ -192,15 +214,103 @@ func (s *Server) stopped() bool {
 // handle runs a request addressed to unit. ok is false when no reply
 // must be sent (other slave or broadcast).
 func (s *Server) handle(cfg Config, unit byte, req modbus.PDU, tcp bool) (modbus.PDU, bool) {
-	if unit == 0 {
-		s.requests.Add(1)
-		return s.Store.Handle(req), tcp // over TCP unit 0 is a normal request
-	}
-	if int(unit) != cfg.SlaveID {
+	s.counters[cntBusMsg].Add(1)
+	if unit != 0 && int(unit) != cfg.SlaveID {
 		return modbus.PDU{}, false
 	}
 	s.requests.Add(1)
-	return s.Store.Handle(req), true
+	s.counters[cntSlaveMsg].Add(1)
+	resp := s.respond(req)
+	if resp.Function&0x80 != 0 {
+		s.counters[cntException].Add(1)
+	}
+	if unit == 0 && !tcp {
+		s.counters[cntNoResponse].Add(1)
+		return modbus.PDU{}, false // serial broadcast: no reply
+	}
+	return resp, true // over TCP unit 0 is a normal request
+}
+
+func (s *Server) respond(req modbus.PDU) modbus.PDU {
+	switch req.Function {
+	case modbus.FuncDiagnostics:
+		return s.diagnostics(req)
+	case modbus.FuncEncapsulated:
+		return deviceIdentification(req)
+	}
+	return s.Store.Handle(req)
+}
+
+func (s *Server) clearCounters() {
+	for i := range s.counters {
+		s.counters[i].Store(0)
+	}
+}
+
+// diagnostics answers FC08: echo, restart, counters.
+func (s *Server) diagnostics(req modbus.PDU) modbus.PDU {
+	fc := req.Function
+	if len(req.Data) != 4 {
+		return exception(fc, modbus.ExIllegalDataValue)
+	}
+	sub := uint16(req.Data[0])<<8 | uint16(req.Data[1])
+	switch sub {
+	case modbus.DiagReturnQueryData:
+		return modbus.PDU{Function: fc, Data: append([]byte(nil), req.Data...)}
+	case modbus.DiagRestartComm, modbus.DiagClearCounters:
+		s.clearCounters()
+		return modbus.PDU{Function: fc, Data: append([]byte(nil), req.Data...)}
+	}
+	if sub >= modbus.DiagBusMessageCount && sub <= modbus.DiagBusCharOverrunCount {
+		v := s.counters[int(sub-modbus.DiagBusMessageCount)].Load()
+		return modbus.PDU{Function: fc, Data: []byte{req.Data[0], req.Data[1], byte(v >> 8), byte(v)}}
+	}
+	return exception(fc, modbus.ExIllegalFunction)
+}
+
+// simIdentity is what the simulator reports for FC43/14.
+var simIdentity = []modbus.DeviceObject{
+	{ID: 0x00, Value: "AppMODBUS"},
+	{ID: 0x01, Value: "SIM-1"},
+	{ID: 0x02, Value: "1.0"},
+	{ID: 0x03, Value: "https://github.com/elmnaveen/AppMODBUS"},
+	{ID: 0x04, Value: "AppMODBUS slave simulator"},
+	{ID: 0x05, Value: "Simulator"},
+	{ID: 0x06, Value: "Demo meter"},
+}
+
+func deviceIdentification(req modbus.PDU) modbus.PDU {
+	fc := req.Function
+	d := req.Data
+	if len(d) != 3 || d[0] != modbus.MEIReadDeviceID {
+		return exception(fc, modbus.ExIllegalFunction)
+	}
+	code, obj := d[1], d[2]
+	last := byte(0x02) // basic
+	switch code {
+	case modbus.DeviceIDBasic:
+	case modbus.DeviceIDRegular, modbus.DeviceIDExtended:
+		last = 0x06
+	case modbus.DeviceIDSpecific:
+		for _, o := range simIdentity {
+			if o.ID == obj {
+				return modbus.EncodeDeviceID(code, 0x82, []modbus.DeviceObject{o})
+			}
+		}
+		return exception(fc, modbus.ExIllegalDataAddress)
+	default:
+		return exception(fc, modbus.ExIllegalDataValue)
+	}
+	if obj > last {
+		obj = 0 // the spec restarts from 0 for an unknown object
+	}
+	var objs []modbus.DeviceObject
+	for _, o := range simIdentity {
+		if o.ID >= obj && o.ID <= last {
+			objs = append(objs, o)
+		}
+	}
+	return modbus.EncodeDeviceID(code, 0x82, objs)
 }
 
 func (s *Server) acceptLoop(ln net.Listener, cfg Config) {
@@ -330,6 +440,7 @@ func (s *Server) serveRTUStream(read func([]byte, time.Duration) (int, error), w
 		s.traffic(modbus.Rx, frame)
 		unit, req, err := modbus.DecodeRTU(frame)
 		if err != nil {
+			s.counters[cntCommErr].Add(1)
 			continue // corrupt frame: a slave stays silent
 		}
 		if resp, ok := s.handle(cfg, unit, req, false); ok {
@@ -352,6 +463,7 @@ func (s *Server) serveUDP(pc net.PacketConn, cfg Config) {
 		s.traffic(modbus.Rx, buf[:n])
 		unit, req, err := modbus.DecodeRTU(buf[:n])
 		if err != nil {
+			s.counters[cntCommErr].Add(1)
 			continue
 		}
 		if resp, ok := s.handle(cfg, unit, req, false); ok {

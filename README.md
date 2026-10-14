@@ -6,7 +6,7 @@ with a **React + TypeScript** UI.
 
 ![Poll window](docs/screenshots/poll-window.png)
 
-## Features (v0.1)
+## Features
 
 | Area | Details |
 | --- | --- |
@@ -15,19 +15,35 @@ with a **React + TypeScript** UI.
 | Poll windows | Any number of windows, each with its own slave ID, function, address, quantity and scan rate, shown as tabs or tiled side by side |
 | Read functions | 01 Read Coils, 02 Read Discrete Inputs, 03 Read Holding Registers, 04 Read Input Registers |
 | Write functions | 05, 06, 15, 16: double-click a cell, or use the **Write** dialog |
+| Other functions | 08 Diagnostics, 43/14 Read Device Identification |
 | Data formats | Signed, Unsigned, Hex, Binary; 32-bit Long / Unsigned Long / Float and 64-bit Long64 / Double, each in all four byte orders (AB CD, CD AB, BA DC, DC BA); set per window or per cell (right-click) |
 | Addressing | Protocol (base 0) or PLC (base 1) per window |
-| Diagnostics | Tx / Err counters, timeout, CRC and exception reporting, response time |
+| Diagnostics | Tx / Err counters, timeout, CRC and exception reporting, response time. **Diagnostics** window: per-connection and per-window statistics (timeouts, CRC errors, exceptions by code, min/avg/p95/max response time), response-time histogram and chart |
+| Scanning | Slave ID scan (1–247) on any connection; register map probe (which addresses of functions 01–04 a slave answers, then open them as poll windows); Modbus TCP network scan of an IP range with unit IDs and device identification |
+| Device tools | Function 43/14 Read Device Identification (basic, regular, extended); function 08 echo test and serial-line counters (read / clear) |
 | Traffic log | Live Tx/Rx frames in hex with timestamps; pause, filter, clear, save to file |
-| Simulator | Built-in Modbus slave (TCP, RTU over TCP/UDP, serial RTU) with an editable data table and optional live demo values |
+| Simulator | Built-in Modbus slave (TCP, RTU over TCP/UDP, serial RTU) with an editable data table, optional live demo values, optional valid-address ranges per table, function 08 counters and 43/14 identification |
 | Workspaces | Save/open `.mbw` files (connections, windows, formats, layout, simulator data); recent list; session autosave and restore on start-up with polling stopped; prompts to remap missing serial ports |
 | Tags & profiles | Name, gain/offset scaling and units per register; device profiles (bundled, personal and shared-folder) applied to any slave ID; import register maps from CSV/Excel with Modicon address detection |
 | Recording | **REC** per poll window stores values (in engineering units) on disk; Data management: retention (default 30 days), size cap (default 2 GB, oldest first), storage folder, export to CSV/Excel, delete by series or date range |
+| Charts | Chart tabs that combine up to 8 registers from any poll windows, plus an inline chart under each poll window. Left and right Y axes (one per unit), step lanes for coils and discrete inputs, min/max/avg/last per line, crosshair tooltip, drag to zoom, PNG and CSV export. Ranges from 1 minute to 30 days; 1 hour and longer also draw recorded history |
 | Themes | Light and dark |
 | Updates | Checks GitHub Releases on startup, offers one-click install & restart, Stable/Beta channels; every package is verified with an Ed25519-signed SHA-256 list ([docs/UPDATES.md](docs/UPDATES.md)) |
 
 Several poll windows can share one connection. Requests are queued per connection, so windows
 never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time to turn around.
+
+![Chart tab with two Y axes](docs/screenshots/chart.png)
+
+<p>
+  <img src="docs/screenshots/chart-inline.png" width="49%" alt="Inline chart under a poll window">
+  <img src="docs/screenshots/chart-bits.png" width="49%" alt="Discrete inputs as step lanes">
+</p>
+
+<p>
+  <img src="docs/screenshots/diagnostics.png" width="49%" alt="Connection statistics">
+  <img src="docs/screenshots/register-map-scan.png" width="49%" alt="Register map scan">
+</p>
 
 <p>
   <img src="docs/screenshots/dark-tile.png" width="49%" alt="Tiled poll windows in dark mode">
@@ -38,7 +54,8 @@ never collide on an RS-485 bus, and "Delay between polls" gives slow slaves time
 
 1. Launch AppMODBUS and click **Try with the built-in simulator**. This starts a slave on
    `127.0.0.1:5020`, connects to it and opens three poll windows.
-2. Double-click a holding register or coil to write it. Right-click a register to change its format.
+2. Double-click a holding register or coil to write it. Right-click a register to change its format,
+   name it, or add it to a chart. **Chart** in a window's title bar shows its values over time.
 3. To use real hardware, open **Connection**, pick a type (serial port or IP address), then add a window
    with **New poll**.
 
@@ -106,9 +123,10 @@ internal/settings        Persisted user preferences
 internal/version         Build version, injected by CI
 cmd/updatekey            Generates the release signing key; signs and verifies checksums
 frontend/src             React UI (poll windows, dialogs, traffic log, simulator panel)
+frontend/src/charts      Charts: live buffer, history merge, uPlot rendering
 ```
 
 ## Planned next (v2 ideas)
 
-Real-time and historical charts, Modbus ASCII,
+Modbus ASCII,
 Modbus UDP (MBAP) and function 23 (read/write multiple registers).

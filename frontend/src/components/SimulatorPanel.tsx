@@ -120,6 +120,22 @@ export function SimulatorPanel({ onClose, onStatus }: Props) {
                 <input type="checkbox" disabled={running} checked={cfg.animate} onChange={(e) => set('animate', e.target.checked)} />
                 Live demo values (IR 0–9, DI 0–7)
               </label>
+              <details className="full sim-limits" open={Object.values(cfg.limits ?? {}).some(Boolean)}>
+                <summary>Valid addresses</summary>
+                <p className="muted">Answer &ldquo;illegal data address&rdquo; outside these ranges, like a real device. Blank = all 0–65535.</p>
+                {TABLES.map((t) => (
+                  <label key={t.id} className="inline">
+                    <span className="lbl" style={{ width: 86 }}>{t.label}</span>
+                    <input
+                      type="text"
+                      disabled={running}
+                      placeholder="e.g. 0-99, 1000-1019"
+                      value={cfg.limits?.[t.id] ?? ''}
+                      onChange={(e) => set('limits', { ...(cfg.limits ?? {}), [t.id]: e.target.value })}
+                    />
+                  </label>
+                ))}
+              </details>
               <div className="full inline">
                 <button className={`btn ${running ? 'outline' : 'primary'}`} onClick={toggle}>
                   {running ? <><IconStop />Stop simulator</> : <><IconPlay />Start simulator</>}
