@@ -14,6 +14,10 @@ export function Alarms() {
   return window['go']['main']['App']['Alarms']();
 }
 
+export function AnswerPrompt(arg1) {
+  return window['go']['main']['App']['AnswerPrompt'](arg1);
+}
+
 export function AppInfo() {
   return window['go']['main']['App']['AppInfo']();
 }
@@ -100,6 +104,10 @@ export function ExportProfile(arg1) {
 
 export function ExportRecording(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ExportRecording'](arg1, arg2, arg3, arg4);
+}
+
+export function ExportSequenceReport() {
+  return window['go']['main']['App']['ExportSequenceReport']();
 }
 
 export function Formats() {
@@ -210,6 +218,10 @@ export function RestoreSession() {
   return window['go']['main']['App']['RestoreSession']();
 }
 
+export function RunSequence(arg1) {
+  return window['go']['main']['App']['RunSequence'](arg1);
+}
+
 export function SaveConnection(arg1) {
   return window['go']['main']['App']['SaveConnection'](arg1);
 }
@@ -238,6 +250,10 @@ export function ScanState() {
   return window['go']['main']['App']['ScanState']();
 }
 
+export function SequenceState() {
+  return window['go']['main']['App']['SequenceState']();
+}
+
 export function SerialPorts() {
   return window['go']['main']['App']['SerialPorts']();
 }
@@ -264,6 +280,10 @@ export function SetLayout(arg1) {
 
 export function SetPollRecording(arg1, arg2) {
   return window['go']['main']['App']['SetPollRecording'](arg1, arg2);
+}
+
+export function SetSequences(arg1) {
+  return window['go']['main']['App']['SetSequences'](arg1);
 }
 
 export function SetTag(arg1, arg2, arg3) {
@@ -340,6 +360,10 @@ export function StopPoll(arg1) {
 
 export function StopScan() {
   return window['go']['main']['App']['StopScan']();
+}
+
+export function StopSequence() {
+  return window['go']['main']['App']['StopSequence']();
 }
 
 export function UpdatePoll(arg1) {

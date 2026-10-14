@@ -46,6 +46,7 @@ type File struct {
 	Polls       []engine.PollConfig       `json:"polls"`
 	Layout      Layout                    `json:"layout"`
 	Charts      json.RawMessage           `json:"charts,omitempty"`
+	Sequences   json.RawMessage           `json:"sequences,omitempty"` // test sequences (owned by the UI)
 	Simulator   *Simulator                `json:"simulator,omitempty"`
 }
 

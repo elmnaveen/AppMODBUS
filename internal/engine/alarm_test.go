@@ -2,6 +2,7 @@ package engine
 
 import (
 	"testing"
+	"time"
 
 	"appmodbus/internal/modbus"
 	"appmodbus/internal/simulator"
@@ -147,5 +148,58 @@ func TestAlarmLog(t *testing.T) {
 	}
 	if some, _ := l.Query(base+86_400_000/2, base+86_400_000, 0); len(some) != 2 {
 		t.Fatalf("range %v", some)
+	}
+}
+
+func TestSequence(t *testing.T) {
+	e := New(nil)
+	defer e.Shutdown()
+	port := startSimCfg(t, e, simulator.Config{Mode: modbus.ModeTCP})
+	e.Sim.Store.Write(simulator.InputRegisters, 3, []int{2301})
+	conn, _ := e.SaveConnection(ConnectionConfig{Mode: modbus.ModeTCP, Host: "127.0.0.1", Port: port, TimeoutMs: 500})
+	seq := Sequence{ID: "s1", Name: "Meter check", ConnectionID: conn.ID, SlaveID: 1, Repeat: 2, Steps: []SeqStep{
+		{Kind: "read", Label: "Voltage L1", Function: 4, Address: 3, Format: "unsigned", Gain: 0.1, Check: "range", Min: 225, Max: 235},
+		{Kind: "write", Label: "Set CT ratio", Function: 6, Address: 0, Format: "signed", Values: "500"},
+		{Kind: "read", Label: "CT ratio", Function: 3, Address: 0, Format: "signed", Check: "eq", Value: 500},
+		{Kind: "write", Label: "Relay on", Function: 5, Address: 2, Values: "on"},
+		{Kind: "read", Label: "Relay", Function: 1, Address: 2, Check: "eq", Value: 1},
+		{Kind: "wait", WaitMs: 10},
+		{Kind: "prompt", Text: "Check the LED"},
+		{Kind: "read", Label: "Too high", Function: 4, Address: 3, Format: "unsigned", Gain: 0.1, Check: "lt", Value: 200},
+	}}
+	if err := e.RunSequence(seq); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		st := e.SequenceState()
+		if st.Prompt != "" {
+			e.AnswerPrompt(true)
+		}
+		if !st.Running {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	st := e.SequenceState()
+	if st.Running || st.Verdict != "fail" || len(st.Results) != 16 || st.Passed != 8 || st.Failed != 2 || st.Errors != 0 {
+		t.Fatalf("run %+v", st)
+	}
+	if r := st.Results[0]; r.Status != "pass" || r.Value != "230.1" || r.Expect != "225 … 235" {
+		t.Fatalf("first step %+v", r)
+	}
+	if r := st.Results[15]; r.Run != 2 || r.Status != "fail" {
+		t.Fatalf("last step %+v", r)
+	}
+
+	// Stop on the first failure.
+	seq.StopOnFail, seq.Repeat = true, 1
+	seq.Steps = []SeqStep{seq.Steps[7], seq.Steps[0]}
+	_ = e.RunSequence(seq)
+	for e.SequenceState().Running {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if st := e.SequenceState(); len(st.Results) != 1 || st.Verdict != "fail" {
+		t.Fatalf("stop on fail %+v", st)
 	}
 }

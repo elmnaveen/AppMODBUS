@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, errText, events } from './api'
 import { ConnectionsDialog, blankConnection } from './components/ConnectionsDialog'
 import {
-  IconBell, IconBolt, IconBook, IconChart, IconPulse, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
+  IconBell, IconBolt, IconBook, IconChart, IconFlask, IconPulse, IconDatabase, IconInfo, IconList, IconMoon, IconPen, IconPlay, IconPlug, IconPlus, IconServer, IconStop, IconSun, IconTabs, IconTile, IconX,
 } from './components/Icons'
 import { PollDialog } from './components/PollDialog'
 import { PollWindow } from './components/PollWindow'
@@ -12,6 +12,7 @@ import { AboutDialog, UpdateBanner, useUpdates } from './components/Updates'
 import { DataDialog } from './components/DataDialog'
 import { DiagnosticsDialog } from './components/Diagnostics'
 import { AlarmsPanel, beep, loadAlarmSound } from './components/AlarmsPanel'
+import { TestsDialog, parseSequences } from './components/Tests'
 import { ProfilesDialog } from './components/Profiles'
 import { TagDialog } from './components/TagDialog'
 import { FileMenu, PortRemapDialog, UnsavedDialog } from './components/Workspace'
@@ -23,7 +24,7 @@ import {
   addSeries, emptyCharts, MAX_SERIES, newChartId, parseCharts, pruneCharts,
   type ChartDef, type ChartSeries, type ChartsDoc, type InlineChart,
 } from './charts/model'
-import { fc2, type Alarm, type AppInfo, type Cell, type LoadResult, type WorkspaceState, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
+import { fc2, type Alarm, type AppInfo, type Sequence, type Cell, type LoadResult, type WorkspaceState, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
 
 type Dialog =
   | { kind: 'connections'; id?: string }
@@ -36,6 +37,7 @@ type Dialog =
   | { kind: 'data' }
   | { kind: 'addSeries'; chartId: string }
   | { kind: 'diag' }
+  | { kind: 'tests' }
   | null
 
 export default function App() {
@@ -63,6 +65,8 @@ export default function App() {
   const seenAlarms = useRef(new Set<string>())
   const [charts, setCharts] = useState<ChartsDoc>(emptyCharts)
   const sentCharts = useRef(JSON.stringify(emptyCharts()))
+  const [sequences, setSequences] = useState<Sequence[]>([])
+  const sentSeqs = useRef('[]')
 
   const notify = useCallback((msg: string, error = true) => {
     setToast({ msg, error })
@@ -80,6 +84,8 @@ export default function App() {
         setPolls((cur) => ({ ...cur, [p.config.id]: p }))
       }),
       events.onConnections(setConnections),
+      // An operator step needs an answer: bring the test window back.
+      events.onSequence((r) => { if (r.prompt) setDialog((d) => (d?.kind === 'tests' ? d : { kind: 'tests' })) }),
       events.onAlarms((list) => {
         setAlarms(list)
         // Open the panel when a new alarm is raised (not on every update).
@@ -106,6 +112,9 @@ export default function App() {
     const doc = pruneCharts(parseCharts(r.charts), new Set(ps.map((p) => p.config.id)))
     sentCharts.current = JSON.stringify(doc)
     setCharts(doc)
+    const seqs = parseSequences(r.sequences)
+    sentSeqs.current = JSON.stringify(seqs)
+    setSequences(seqs)
     const ids = [...ps.map((p) => p.config.id), ...doc.tabs.map((t) => t.id)]
     setActive(ids.includes(r.layout.activeId) ? r.layout.activeId : ids[0] ?? '')
     if (r.warnings.length) notify(`Some items could not be loaded: ${r.warnings.join('; ')}`)
@@ -116,6 +125,14 @@ export default function App() {
   useEffect(() => {
     if (restored) api.setLayout({ view, activeId: active, showTraffic, showSimulator: showSim })
   }, [restored, view, active, showTraffic, showSim])
+
+  useEffect(() => {
+    const json = JSON.stringify(sequences)
+    if (restored && json !== sentSeqs.current) {
+      sentSeqs.current = json
+      api.setSequences(sequences)
+    }
+  }, [restored, sequences])
 
   // Beep while alarms are unacknowledged.
   const unacked = alarms.filter((a) => !a.acked)
@@ -326,6 +343,7 @@ export default function App() {
         <button className="btn" onClick={() => setDialog({ kind: 'profiles' })}><IconBook />Profiles</button>
         <button className="btn" onClick={() => setDialog({ kind: 'data' })}><IconDatabase />Data</button>
         <button className="btn" onClick={() => setDialog({ kind: 'diag' })}><IconPulse />Diagnostics</button>
+        <button className="btn" onClick={() => setDialog({ kind: 'tests' })}><IconFlask />Tests</button>
         <span className="tb-sep" />
         <button className={`btn icon${view === 'tabs' ? ' on' : ''}`} title="Tabbed view" onClick={() => setView('tabs')}><IconTabs /></button>
         <button className={`btn icon${view === 'tile' ? ' on' : ''}`} title="Tile all windows" onClick={() => setView('tile')}><IconTile /></button>
@@ -505,6 +523,16 @@ export default function App() {
             setDialog(null)
             notify(`Opened ${created.length} poll window(s)`, false)
           }}
+          onClose={() => setDialog(null)}
+          onInfo={onInfo}
+        />
+      )}
+      {dialog?.kind === 'tests' && (
+        <TestsDialog
+          sequences={sequences}
+          connections={connections}
+          formats={formats}
+          onChange={setSequences}
           onClose={() => setDialog(null)}
           onInfo={onInfo}
         />

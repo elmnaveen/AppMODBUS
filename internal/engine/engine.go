@@ -216,6 +216,7 @@ type Engine struct {
 	traffic *trafficLog
 	scan    scanner
 	alarms  alarmTable
+	seq     sequencer
 
 	// OnAlarm, when set, receives every alarm history event.
 	OnAlarm func(AlarmEvent)

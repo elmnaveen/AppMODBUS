@@ -776,6 +776,183 @@ export namespace engine {
 		    return a;
 		}
 	}
+	export class SeqStep {
+	    kind: string;
+	    label: string;
+	    slaveId: number;
+	    function: number;
+	    address: number;
+	    format: string;
+	    gain: number;
+	    offset: number;
+	    check: string;
+	    value: number;
+	    min: number;
+	    max: number;
+	    tolerance: number;
+	    values: string;
+	    waitMs: number;
+	    text: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SeqStep(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.label = source["label"];
+	        this.slaveId = source["slaveId"];
+	        this.function = source["function"];
+	        this.address = source["address"];
+	        this.format = source["format"];
+	        this.gain = source["gain"];
+	        this.offset = source["offset"];
+	        this.check = source["check"];
+	        this.value = source["value"];
+	        this.min = source["min"];
+	        this.max = source["max"];
+	        this.tolerance = source["tolerance"];
+	        this.values = source["values"];
+	        this.waitMs = source["waitMs"];
+	        this.text = source["text"];
+	    }
+	}
+	export class Sequence {
+	    id: string;
+	    name: string;
+	    connectionId: string;
+	    slaveId: number;
+	    repeat: number;
+	    stopOnFail: boolean;
+	    stepDelayMs: number;
+	    steps: SeqStep[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Sequence(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.connectionId = source["connectionId"];
+	        this.slaveId = source["slaveId"];
+	        this.repeat = source["repeat"];
+	        this.stopOnFail = source["stopOnFail"];
+	        this.stepDelayMs = source["stepDelayMs"];
+	        this.steps = this.convertValues(source["steps"], SeqStep);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class StepResult {
+	    run: number;
+	    index: number;
+	    label: string;
+	    status: string;
+	    value: string;
+	    expect: string;
+	    message: string;
+	    ms: number;
+	    time: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new StepResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.run = source["run"];
+	        this.index = source["index"];
+	        this.label = source["label"];
+	        this.status = source["status"];
+	        this.value = source["value"];
+	        this.expect = source["expect"];
+	        this.message = source["message"];
+	        this.ms = source["ms"];
+	        this.time = source["time"];
+	    }
+	}
+	export class SequenceRun {
+	    sequenceId: string;
+	    name: string;
+	    connection: string;
+	    running: boolean;
+	    prompt: string;
+	    run: number;
+	    runs: number;
+	    step: number;
+	    started: number;
+	    finished: number;
+	    verdict: string;
+	    error: string;
+	    passed: number;
+	    failed: number;
+	    errors: number;
+	    results: StepResult[];
+	    seq: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SequenceRun(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sequenceId = source["sequenceId"];
+	        this.name = source["name"];
+	        this.connection = source["connection"];
+	        this.running = source["running"];
+	        this.prompt = source["prompt"];
+	        this.run = source["run"];
+	        this.runs = source["runs"];
+	        this.step = source["step"];
+	        this.started = source["started"];
+	        this.finished = source["finished"];
+	        this.verdict = source["verdict"];
+	        this.error = source["error"];
+	        this.passed = source["passed"];
+	        this.failed = source["failed"];
+	        this.errors = source["errors"];
+	        this.results = this.convertValues(source["results"], StepResult);
+	        this.seq = source["seq"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	
 	
 	export class WriteRequest {
@@ -1011,6 +1188,7 @@ export namespace main {
 	    state: WorkspaceState;
 	    layout: workspace.Layout;
 	    charts: any;
+	    sequences: any;
 	    warnings: string[];
 	    missingPorts: MissingPort[];
 	    ports: string[];
@@ -1024,6 +1202,7 @@ export namespace main {
 	        this.state = this.convertValues(source["state"], WorkspaceState);
 	        this.layout = this.convertValues(source["layout"], workspace.Layout);
 	        this.charts = source["charts"];
+	        this.sequences = source["sequences"];
 	        this.warnings = source["warnings"];
 	        this.missingPorts = this.convertValues(source["missingPorts"], MissingPort);
 	        this.ports = source["ports"];

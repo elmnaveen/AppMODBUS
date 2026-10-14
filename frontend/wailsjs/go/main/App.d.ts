@@ -16,6 +16,8 @@ export function AlarmHistory(arg1:number,arg2:number,arg3:number):Promise<Array<
 
 export function Alarms():Promise<Array<engine.Alarm>>;
 
+export function AnswerPrompt(arg1:boolean):Promise<void>;
+
 export function AppInfo():Promise<main.AppInfo>;
 
 export function ApplyProfile(arg1:string,arg2:string,arg3:number,arg4:number):Promise<Array<engine.Poll>>;
@@ -59,6 +61,8 @@ export function ExportAlarmHistory(arg1:number,arg2:number):Promise<main.ExportR
 export function ExportProfile(arg1:string):Promise<string>;
 
 export function ExportRecording(arg1:Array<string>,arg2:number,arg3:number,arg4:string):Promise<main.ExportResult>;
+
+export function ExportSequenceReport():Promise<string>;
 
 export function Formats():Promise<Array<datafmt.Info>>;
 
@@ -114,6 +118,8 @@ export function ResetStatistics(arg1:string):Promise<void>;
 
 export function RestoreSession():Promise<main.LoadResult>;
 
+export function RunSequence(arg1:engine.Sequence):Promise<void>;
+
 export function SaveConnection(arg1:engine.ConnectionConfig):Promise<engine.ConnectionInfo>;
 
 export function SaveExportFile(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<string>;
@@ -128,6 +134,8 @@ export function SaveWorkspaceAs():Promise<string>;
 
 export function ScanState():Promise<engine.ScanState>;
 
+export function SequenceState():Promise<engine.SequenceRun>;
+
 export function SerialPorts():Promise<Array<string>>;
 
 export function SeriesIDs(arg1:Array<main.SeriesRef>):Promise<Array<string>>;
@@ -141,6 +149,8 @@ export function SetDataLimits(arg1:number,arg2:number):Promise<main.DataSettings
 export function SetLayout(arg1:workspace.Layout):Promise<void>;
 
 export function SetPollRecording(arg1:string,arg2:boolean):Promise<void>;
+
+export function SetSequences(arg1:any):Promise<void>;
 
 export function SetTag(arg1:string,arg2:number,arg3:engine.Tag):Promise<void>;
 
@@ -179,6 +189,8 @@ export function StopAll():Promise<void>;
 export function StopPoll(arg1:string):Promise<void>;
 
 export function StopScan():Promise<void>;
+
+export function StopSequence():Promise<void>;
 
 export function UpdatePoll(arg1:engine.PollConfig):Promise<engine.Poll>;
 

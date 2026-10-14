@@ -294,6 +294,7 @@ export interface LoadResult {
   state: WorkspaceState
   layout: Layout
   charts: unknown
+  sequences: unknown
   warnings: string[]
   missingPorts: MissingPort[]
   ports: string[]
@@ -469,3 +470,70 @@ export interface EchoResult { sent: number; ok: number; minMs: number; avgMs: nu
 export interface CounterValue { sub: number; name: string; value: number; error: string }
 export interface DeviceObject { id: number; name: string; value: string }
 export interface DeviceID { conformity: number; objects: DeviceObject[] }
+
+// ---- test sequences ----
+
+export type StepKind = 'read' | 'write' | 'wait' | 'prompt'
+export type CheckOp = '' | 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge' | 'range'
+
+export interface SeqStep {
+  kind: StepKind
+  label: string
+  slaveId: number // 0 = the sequence's slave
+  function: number
+  address: number
+  format: string
+  gain: number
+  offset: number
+  check: CheckOp
+  value: number
+  min: number
+  max: number
+  tolerance: number
+  values: string
+  waitMs: number
+  text: string
+}
+
+export interface Sequence {
+  id: string
+  name: string
+  connectionId: string
+  slaveId: number
+  repeat: number
+  stopOnFail: boolean
+  stepDelayMs: number
+  steps: SeqStep[]
+}
+
+export interface StepResult {
+  run: number
+  index: number
+  label: string
+  status: 'pass' | 'fail' | 'error' | 'done' | 'skipped'
+  value: string
+  expect: string
+  message: string
+  ms: number
+  time: number
+}
+
+export interface SequenceRun {
+  sequenceId: string
+  name: string
+  connection: string
+  running: boolean
+  prompt: string
+  run: number
+  runs: number
+  step: number
+  started: number
+  finished: number
+  verdict: '' | 'pass' | 'fail' | 'stopped' | 'error'
+  error: string
+  passed: number
+  failed: number
+  errors: number
+  results: StepResult[]
+  seq: number
+}
