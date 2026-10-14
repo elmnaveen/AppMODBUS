@@ -2,6 +2,7 @@
 import * as Go from '../wailsjs/go/main/App'
 import { EventsOn } from '../wailsjs/runtime/runtime'
 import type {
+  Layout, LoadResult, WorkspaceState,
   AppInfo, UpdateProgress, UpdateSettings, UpdateState,
   ConnectionConfig, ConnectionInfo, FormatInfo, Poll, PollConfig, SimConfig,
   SimStatus, SimTable, TrafficEntry, WriteRequest,
@@ -47,6 +48,19 @@ export const api = {
   simRead: (t: SimTable, address: number, qty: number): Promise<number[]> => g.SimRead(t, address, qty),
   simWrite: (t: SimTable, address: number, values: number[]): Promise<void> => g.SimWrite(t, address, values),
 
+  simConfig: (): Promise<SimConfig> => g.SimConfig(),
+
+  restoreSession: (): Promise<LoadResult> => g.RestoreSession(),
+  workspaceState: (): Promise<WorkspaceState> => g.WorkspaceState(),
+  newWorkspace: (): Promise<LoadResult> => g.NewWorkspace(),
+  openWorkspace: (): Promise<LoadResult | null> => g.OpenWorkspace(),
+  openWorkspacePath: (path: string): Promise<LoadResult | null> => g.OpenWorkspacePath(path),
+  saveWorkspace: (): Promise<string> => g.SaveWorkspace(),
+  saveWorkspaceAs: (): Promise<string> => g.SaveWorkspaceAs(),
+  setLayout: (l: Layout): Promise<void> => g.SetLayout(l),
+  setCharts: (charts: unknown): Promise<void> => g.SetCharts(charts),
+  remapSerialPort: (connectionId: string, port: string): Promise<void> => g.RemapSerialPort(connectionId, port),
+
   appInfo: (): Promise<AppInfo> => g.AppInfo(),
   updateSettings: (): Promise<UpdateSettings> => g.UpdateSettings(),
   setUpdateSettings: (channel: string, autoCheck: boolean): Promise<UpdateSettings> => g.SetUpdateSettings(channel, autoCheck),
@@ -61,6 +75,7 @@ export const events = {
   onPoll: (cb: (p: Poll) => void) => EventsOn('poll:update', cb),
   onConnections: (cb: (c: ConnectionInfo[]) => void) => EventsOn('connections', cb),
   onTraffic: (cb: (t: TrafficEntry[]) => void) => EventsOn('traffic', cb),
+  onWorkspace: (cb: (s: WorkspaceState) => void) => EventsOn('workspace:state', cb),
   onUpdateState: (cb: (s: UpdateState) => void) => EventsOn('update:state', cb),
   onUpdateProgress: (cb: (p: UpdateProgress) => void) => EventsOn('update:progress', cb),
 }

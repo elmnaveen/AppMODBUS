@@ -183,3 +183,34 @@ export interface UpdateProgress {
   done: number
   total: number
 }
+
+// ---------- workspace ----------
+
+export interface Layout {
+  view: 'tabs' | 'tile'
+  activeId: string
+  showTraffic: boolean
+  showSimulator: boolean
+}
+
+export interface WorkspaceState {
+  path: string
+  name: string
+  dirty: boolean
+  recent: string[]
+}
+
+export interface MissingPort {
+  connectionId: string
+  name: string
+  port: string
+}
+
+export interface LoadResult {
+  state: WorkspaceState
+  layout: Layout
+  charts: unknown
+  warnings: string[]
+  missingPorts: MissingPort[]
+  ports: string[]
+}

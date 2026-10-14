@@ -349,3 +349,15 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .notes code { font-family: var(--mono); background: var(--panel-2); padding: 0 4px; border-radius: 4px; }
 .btn .badge { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); }
 .btn.has-badge { position: relative; }
+
+/* ---------- workspace ---------- */
+.dropdown { position: relative; }
+.menu-pop { position: absolute; top: 34px; left: 0; min-width: 300px; }
+.menu-pop button { align-items: center; }
+.menu-pop button svg, .menu-pop .ico-pad { width: 16px; height: 16px; flex: none; }
+.menu-pop kbd { margin-left: auto; font: 11px var(--mono); color: var(--faint); }
+.menu-pop .recent-name { font-weight: 600; white-space: nowrap; }
+.menu-pop .recent-path { color: var(--faint); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; min-width: 0; flex: 1; }
+.ws-name { display: flex; align-items: center; gap: 6px; font-weight: 600; max-width: 260px; padding: 0 8px; color: var(--muted); }
+.ws-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-name .dirty { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }

@@ -278,6 +278,81 @@ export namespace main {
 	        this.canInstall = source["canInstall"];
 	    }
 	}
+	export class MissingPort {
+	    connectionId: string;
+	    name: string;
+	    port: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new MissingPort(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connectionId = source["connectionId"];
+	        this.name = source["name"];
+	        this.port = source["port"];
+	    }
+	}
+	export class WorkspaceState {
+	    path: string;
+	    name: string;
+	    dirty: boolean;
+	    recent: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new WorkspaceState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.name = source["name"];
+	        this.dirty = source["dirty"];
+	        this.recent = source["recent"];
+	    }
+	}
+	export class LoadResult {
+	    state: WorkspaceState;
+	    layout: workspace.Layout;
+	    charts: any;
+	    warnings: string[];
+	    missingPorts: MissingPort[];
+	    ports: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new LoadResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.state = this.convertValues(source["state"], WorkspaceState);
+	        this.layout = this.convertValues(source["layout"], workspace.Layout);
+	        this.charts = source["charts"];
+	        this.warnings = source["warnings"];
+	        this.missingPorts = this.convertValues(source["missingPorts"], MissingPort);
+	        this.ports = source["ports"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class UpdateState {
 	    status: string;
 	    release?: update.Release;
@@ -326,6 +401,7 @@ export namespace settings {
 	    autoCheckUpdates: boolean;
 	    skippedVersion: string;
 	    lastUpdateCheckAt: number;
+	    recentWorkspaces: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -337,6 +413,7 @@ export namespace settings {
 	        this.autoCheckUpdates = source["autoCheckUpdates"];
 	        this.skippedVersion = source["skippedVersion"];
 	        this.lastUpdateCheckAt = source["lastUpdateCheckAt"];
+	        this.recentWorkspaces = source["recentWorkspaces"];
 	    }
 	}
 
@@ -478,6 +555,29 @@ export namespace update {
 		    }
 		    return a;
 		}
+	}
+
+}
+
+export namespace workspace {
+	
+	export class Layout {
+	    view: string;
+	    activeId: string;
+	    showTraffic: boolean;
+	    showSimulator: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Layout(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.view = source["view"];
+	        this.activeId = source["activeId"];
+	        this.showTraffic = source["showTraffic"];
+	        this.showSimulator = source["showSimulator"];
+	    }
 	}
 
 }

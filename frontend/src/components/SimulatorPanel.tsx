@@ -31,6 +31,10 @@ export function SimulatorPanel({ onClose, onStatus }: Props) {
   const [editing, setEditing] = useState<{ i: number; text: string } | null>(null)
   const set = <K extends keyof SimConfig>(k: K, v: SimConfig[K]) => setCfg((c) => ({ ...c, [k]: v }))
   const running = status?.running ?? false
+  // Start from the workspace's saved simulator settings.
+  useEffect(() => {
+    api.simConfig().then((c) => c.mode && setCfg(c))
+  }, [])
   const bits = table === 'coils' || table === 'discrete'
 
   // Refresh status and the visible block of data twice a second.

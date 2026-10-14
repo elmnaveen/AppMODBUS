@@ -3,6 +3,7 @@ package settings
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -24,7 +25,7 @@ func TestPersistAndDefaults(t *testing.T) {
 		t.Fatalf("channel %q", s.UpdateChannel)
 	}
 	os.WriteFile(filepath.Join(dir, "settings.json"), []byte("{not json"), 0o644)
-	if s := Open(dir).Get(); s != Defaults() {
+	if s := Open(dir).Get(); !reflect.DeepEqual(s, Defaults()) {
 		t.Fatalf("corrupt file: %+v", s)
 	}
 }

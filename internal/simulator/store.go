@@ -203,3 +203,54 @@ func (s *Store) Handle(req modbus.PDU) modbus.PDU {
 	}
 	return exception(fc, modbus.ExIllegalFunction)
 }
+
+// Block is a run of consecutive values starting at Start.
+type Block struct {
+	Start  int   `json:"start"`
+	Values []int `json:"values"`
+}
+
+// Snapshot returns the non-zero contents of every table as compact blocks.
+// Runs of up to 8 zeros inside a block are kept to avoid fragmenting it.
+func (s *Store) Snapshot() map[Table][]Block {
+	out := map[Table][]Block{}
+	for _, t := range []Table{Coils, DiscreteInputs, HoldingRegisters, InputRegisters} {
+		vals := s.Read(t, 0, 0x10000)
+		var blocks []Block
+		for i := 0; i < len(vals); {
+			if vals[i] == 0 {
+				i++
+				continue
+			}
+			start, end, zeros := i, i, 0
+			for j := i; j < len(vals) && zeros <= 8; j++ {
+				if vals[j] == 0 {
+					zeros++
+				} else {
+					zeros, end = 0, j
+				}
+			}
+			blocks = append(blocks, Block{Start: start, Values: append([]int(nil), vals[start:end+1]...)})
+			i = end + 1
+		}
+		if len(blocks) > 0 {
+			out[t] = blocks
+		}
+	}
+	return out
+}
+
+// Restore clears the store and writes the given blocks.
+func (s *Store) Restore(data map[Table][]Block) {
+	s.mu.Lock()
+	clear(s.coils)
+	clear(s.discrete)
+	clear(s.holding)
+	clear(s.input)
+	s.mu.Unlock()
+	for t, blocks := range data {
+		for _, b := range blocks {
+			s.Write(t, b.Start, b.Values)
+		}
+	}
+}

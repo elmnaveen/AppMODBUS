@@ -3,6 +3,7 @@
 import {main} from '../models';
 import {engine} from '../models';
 import {datafmt} from '../models';
+import {workspace} from '../models';
 import {settings} from '../models';
 import {simulator} from '../models';
 
@@ -28,7 +29,13 @@ export function GetUpdateState():Promise<main.UpdateState>;
 
 export function InstallUpdate():Promise<void>;
 
+export function NewWorkspace():Promise<main.LoadResult>;
+
 export function OpenReleasePage():Promise<void>;
+
+export function OpenWorkspace():Promise<main.LoadResult>;
+
+export function OpenWorkspacePath(arg1:string):Promise<main.LoadResult>;
 
 export function ParseValue(arg1:string,arg2:string):Promise<Array<number>>;
 
@@ -36,17 +43,31 @@ export function Polls():Promise<Array<engine.Poll>>;
 
 export function ReadOnce(arg1:string):Promise<void>;
 
+export function RemapSerialPort(arg1:string,arg2:string):Promise<void>;
+
+export function RestoreSession():Promise<main.LoadResult>;
+
 export function SaveConnection(arg1:engine.ConnectionConfig):Promise<engine.ConnectionInfo>;
 
 export function SaveTrafficLog(arg1:string):Promise<string>;
+
+export function SaveWorkspace():Promise<string>;
+
+export function SaveWorkspaceAs():Promise<string>;
 
 export function SerialPorts():Promise<Array<string>>;
 
 export function SetCellFormat(arg1:string,arg2:number,arg3:string):Promise<void>;
 
+export function SetCharts(arg1:any):Promise<void>;
+
+export function SetLayout(arg1:workspace.Layout):Promise<void>;
+
 export function SetTrafficPaused(arg1:boolean):Promise<void>;
 
 export function SetUpdateSettings(arg1:string,arg2:boolean):Promise<settings.Settings>;
+
+export function SimConfig():Promise<simulator.Config>;
 
 export function SimRead(arg1:string,arg2:number,arg3:number):Promise<Array<number>>;
 
@@ -71,6 +92,8 @@ export function StopPoll(arg1:string):Promise<void>;
 export function UpdatePoll(arg1:engine.PollConfig):Promise<engine.Poll>;
 
 export function UpdateSettings():Promise<settings.Settings>;
+
+export function WorkspaceState():Promise<main.WorkspaceState>;
 
 export function Write(arg1:engine.WriteRequest):Promise<void>;
 

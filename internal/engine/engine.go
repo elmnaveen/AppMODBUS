@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"appmodbus/internal/datafmt"
@@ -131,6 +132,17 @@ type Engine struct {
 	traffic *trafficLog
 
 	Sim *simulator.Server
+
+	// OnChange, if set, is called after any change to connections or poll
+	// definitions (used to track unsaved workspace changes).
+	OnChange func()
+	loading  atomic.Bool
+}
+
+func (e *Engine) changed() {
+	if e.OnChange != nil && !e.loading.Load() {
+		e.OnChange()
+	}
 }
 
 // New creates an engine; emit may be nil.
@@ -242,6 +254,7 @@ func (e *Engine) SaveConnection(cfg ConnectionConfig) (ConnectionInfo, error) {
 	e.conns[cfg.ID] = &connection{cfg: cfg, client: client}
 	e.mu.Unlock()
 	e.emitConnections()
+	e.changed()
 	return e.connInfo(cfg.ID), nil
 }
 
@@ -252,6 +265,7 @@ func (e *Engine) DeleteConnection(id string) {
 	delete(e.conns, id)
 	e.mu.Unlock()
 	e.emitConnections()
+	e.changed()
 }
 
 // Connect opens a connection right away (polls also connect lazily).
@@ -405,6 +419,7 @@ func (e *Engine) CreatePoll(cfg PollConfig) (Poll, error) {
 	p.rebuildCells()
 	snap := p.snapshot()
 	p.mu.Unlock()
+	e.changed()
 	return snap, nil
 }
 
@@ -434,6 +449,7 @@ func (e *Engine) UpdatePoll(cfg PollConfig) (Poll, error) {
 		}
 	}
 	e.publish(p)
+	e.changed()
 	return e.pollSnapshot(p), nil
 }
 
@@ -453,6 +469,7 @@ func (e *Engine) DeletePoll(id string) {
 		}
 	}
 	e.mu.Unlock()
+	e.changed()
 }
 
 // Polls lists every poll in creation order.
@@ -489,6 +506,7 @@ func (e *Engine) SetCellFormat(id string, address int, f datafmt.Format) error {
 	p.rebuildCells()
 	p.mu.Unlock()
 	e.publish(p)
+	e.changed()
 	return nil
 }
 

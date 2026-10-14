@@ -46,8 +46,20 @@ export function InstallUpdate() {
   return window['go']['main']['App']['InstallUpdate']();
 }
 
+export function NewWorkspace() {
+  return window['go']['main']['App']['NewWorkspace']();
+}
+
 export function OpenReleasePage() {
   return window['go']['main']['App']['OpenReleasePage']();
+}
+
+export function OpenWorkspace() {
+  return window['go']['main']['App']['OpenWorkspace']();
+}
+
+export function OpenWorkspacePath(arg1) {
+  return window['go']['main']['App']['OpenWorkspacePath'](arg1);
 }
 
 export function ParseValue(arg1, arg2) {
@@ -62,12 +74,28 @@ export function ReadOnce(arg1) {
   return window['go']['main']['App']['ReadOnce'](arg1);
 }
 
+export function RemapSerialPort(arg1, arg2) {
+  return window['go']['main']['App']['RemapSerialPort'](arg1, arg2);
+}
+
+export function RestoreSession() {
+  return window['go']['main']['App']['RestoreSession']();
+}
+
 export function SaveConnection(arg1) {
   return window['go']['main']['App']['SaveConnection'](arg1);
 }
 
 export function SaveTrafficLog(arg1) {
   return window['go']['main']['App']['SaveTrafficLog'](arg1);
+}
+
+export function SaveWorkspace() {
+  return window['go']['main']['App']['SaveWorkspace']();
+}
+
+export function SaveWorkspaceAs() {
+  return window['go']['main']['App']['SaveWorkspaceAs']();
 }
 
 export function SerialPorts() {
@@ -78,12 +106,24 @@ export function SetCellFormat(arg1, arg2, arg3) {
   return window['go']['main']['App']['SetCellFormat'](arg1, arg2, arg3);
 }
 
+export function SetCharts(arg1) {
+  return window['go']['main']['App']['SetCharts'](arg1);
+}
+
+export function SetLayout(arg1) {
+  return window['go']['main']['App']['SetLayout'](arg1);
+}
+
 export function SetTrafficPaused(arg1) {
   return window['go']['main']['App']['SetTrafficPaused'](arg1);
 }
 
 export function SetUpdateSettings(arg1, arg2) {
   return window['go']['main']['App']['SetUpdateSettings'](arg1, arg2);
+}
+
+export function SimConfig() {
+  return window['go']['main']['App']['SimConfig']();
 }
 
 export function SimRead(arg1, arg2, arg3) {
@@ -132,6 +172,10 @@ export function UpdatePoll(arg1) {
 
 export function UpdateSettings() {
   return window['go']['main']['App']['UpdateSettings']();
+}
+
+export function WorkspaceState() {
+  return window['go']['main']['App']['WorkspaceState']();
 }
 
 export function Write(arg1) {

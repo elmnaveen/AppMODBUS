@@ -9,9 +9,10 @@ import { PollWindow } from './components/PollWindow'
 import { SimulatorPanel, defaultSim } from './components/SimulatorPanel'
 import { TrafficPanel } from './components/TrafficPanel'
 import { AboutDialog, UpdateBanner, useUpdates } from './components/Updates'
+import { FileMenu, PortRemapDialog, UnsavedDialog } from './components/Workspace'
 import { ManualWriteDialog, WriteCellDialog } from './components/WriteDialogs'
 import { useTheme } from './theme'
-import { fc2, type AppInfo, type Cell, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
+import { fc2, type AppInfo, type Cell, type LoadResult, type WorkspaceState, type ConnectionInfo, type FormatInfo, type Poll, type SimStatus } from './types'
 
 type Dialog =
   | { kind: 'connections'; id?: string }
@@ -36,6 +37,10 @@ export default function App() {
   const [info, setInfo] = useState<AppInfo | null>(null)
   const updates = useUpdates()
   const [toast, setToast] = useState<{ msg: string; error: boolean } | null>(null)
+  const [ws, setWs] = useState<WorkspaceState>({ path: '', name: 'Untitled', dirty: false, recent: [] })
+  const [restored, setRestored] = useState(false)
+  const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
+  const [remap, setRemap] = useState<LoadResult | null>(null)
 
   const notify = useCallback((msg: string, error = true) => {
     setToast({ msg, error })
@@ -45,19 +50,62 @@ export default function App() {
   useEffect(() => {
     api.appInfo().then(setInfo)
     api.formats().then(setFormats)
-    api.connections().then(setConnections)
-    api.simStatus().then(setSim)
-    api.polls().then((ps) => {
-      setPolls(Object.fromEntries(ps.map((p) => [p.config.id, p])))
-      setOrder(ps.map((p) => p.config.id))
-      if (ps[0]) setActive(ps[0].config.id)
-    })
+    api.restoreSession().then(applyLoad).finally(() => setRestored(true))
     const offs = [
       events.onPoll((p) => setPolls((cur) => ({ ...cur, [p.config.id]: p }))),
       events.onConnections(setConnections),
+      events.onWorkspace(setWs),
     ]
     return () => offs.forEach((off) => off())
   }, [])
+
+  // Rebuilds the UI from a freshly loaded workspace.
+  const applyLoad = async (r: LoadResult) => {
+    const [ps, cs, st] = await Promise.all([api.polls(), api.connections(), api.simStatus()])
+    setPolls(Object.fromEntries(ps.map((p) => [p.config.id, p])))
+    setOrder(ps.map((p) => p.config.id))
+    setConnections(cs)
+    setSim(st)
+    setWs(r.state)
+    setView(r.layout.view === 'tile' ? 'tile' : 'tabs')
+    setShowTraffic(r.layout.showTraffic)
+    setShowSim(r.layout.showSimulator)
+    setActive(ps.some((p) => p.config.id === r.layout.activeId) ? r.layout.activeId : ps[0]?.config.id ?? '')
+    if (r.warnings.length) notify(`Some items could not be loaded: ${r.warnings.join('; ')}`)
+    if (r.missingPorts.length) setRemap(r)
+  }
+
+  // The layout is saved with the workspace.
+  useEffect(() => {
+    if (restored) api.setLayout({ view, activeId: active, showTraffic, showSimulator: showSim })
+  }, [restored, view, active, showTraffic, showSim])
+
+  // Runs action, first offering to save unsaved changes.
+  const guard = (action: () => Promise<void>) => {
+    if (ws.dirty) setPending(() => action)
+    else action().catch((e) => notify(errText(e)))
+  }
+  const loadWith = (fn: () => Promise<LoadResult | null>) => async () => {
+    const r = await fn()
+    if (r) await applyLoad(r)
+  }
+  const fileNew = () => guard(loadWith(api.newWorkspace))
+  const fileOpen = () => guard(loadWith(api.openWorkspace))
+  const fileOpenRecent = (path: string) => guard(loadWith(() => api.openWorkspacePath(path)))
+  const fileSave = () => api.saveWorkspace().then((p) => p && notify(`Saved ${p}`, false)).catch((e) => notify(errText(e)))
+  const fileSaveAs = () => api.saveWorkspaceAs().then((p) => p && notify(`Saved ${p}`, false)).catch((e) => notify(errText(e)))
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return
+      const k = e.key.toLowerCase()
+      if (k === 's') { e.preventDefault(); e.shiftKey ? fileSaveAs() : fileSave() }
+      else if (k === 'o') { e.preventDefault(); fileOpen() }
+      else if (k === 'n') { e.preventDefault(); fileNew() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   const addPoll = (p: Poll) => {
     setPolls((cur) => ({ ...cur, [p.config.id]: p }))
@@ -135,6 +183,11 @@ export default function App() {
       <div>
       <header className="toolbar">
         <div className="brand"><span className="brand-mark">MB</span>AppMODBUS</div>
+        <FileMenu ws={ws} onNew={fileNew} onOpen={fileOpen} onOpenRecent={fileOpenRecent} onSave={fileSave} onSaveAs={fileSaveAs} />
+        <span className="ws-name" title={ws.path || 'Not saved yet'}>
+          {ws.dirty && <span className="dirty" title="Unsaved changes" />}<span>{ws.name}</span>
+        </span>
+        <span className="tb-sep" />
         <button className="btn" onClick={() => setDialog({ kind: 'connections' })}><IconPlug />Connection</button>
         <button className="btn" onClick={() => setDialog({ kind: 'poll' })}><IconPlus />New poll</button>
         <span className="tb-sep" />
@@ -253,6 +306,23 @@ export default function App() {
       {dialog?.kind === 'about' && (
         <AboutDialog info={info} state={updates.state} progress={updates.progress} onClose={() => setDialog(null)} />
       )}
+      {pending && (
+        <UnsavedDialog
+          name={ws.name}
+          onCancel={() => setPending(null)}
+          onDiscard={() => { const act = pending; setPending(null); act().catch((e) => notify(errText(e))) }}
+          onSave={async () => {
+            const act = pending
+            setPending(null)
+            try {
+              if (await api.saveWorkspace()) await act()
+            } catch (e) {
+              notify(errText(e))
+            }
+          }}
+        />
+      )}
+      {remap && <PortRemapDialog missing={remap.missingPorts} ports={remap.ports} onClose={() => setRemap(null)} onError={onError} />}
       {toast && <div className={`toast${toast.error ? ' error' : ''}`}>{toast.msg}</div>}
     </div>
   )
