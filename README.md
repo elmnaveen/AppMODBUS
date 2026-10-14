@@ -66,7 +66,7 @@ Run the tests with `go test -race ./internal/...`. The serial RTU test uses `soc
 virtual serial cable and is skipped if `socat` is not installed.
 
 CI (`.github/workflows/build.yml`) runs the tests and builds Windows (exe + NSIS installer),
-macOS (universal .app) and Linux binaries on every push. Pushing a `v*` tag publishes a GitHub release with
+macOS (universal .app) and Linux binaries on every push. Running the workflow with a version (Actions → Build → Run workflow), or pushing a `v*` tag, publishes a GitHub release with
 signed checksums, which installed copies pick up as an update. See [docs/UPDATES.md](docs/UPDATES.md) for the one-time
 signing-key setup.
 
